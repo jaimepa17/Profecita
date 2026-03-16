@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "control-notas",
+    "name": "Profecita",
     "slug": "control-notas",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,16 +16,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+              "foregroundImage": "./assets/adaptive-icon.png",
+              "backgroundColor": "#FFD1DC" 
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.jaimepaok17.controlnotas"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"  
     },
     "extra": {
       "eas": {
