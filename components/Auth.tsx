@@ -136,7 +136,7 @@ export default function Auth() {
   const title = screen === 'login' ? 'Iniciar Sesion' : 'Crear Cuenta';
 
   return (
-    <View className="flex-1 justify-center items-center px-4 bg-gray-100">
+    <View className="flex-1 bg-[#AF8F76]">
       <NotificationBar
         visible={notification.visible}
         type={notification.type}
@@ -144,71 +144,126 @@ export default function Auth() {
         onClose={closeNotification}
       />
 
-      <Text className="text-3xl font-bold mb-2 text-center text-gray-800">
-        Control de Notas
-      </Text>
-      <Text className="text-base text-gray-600 mb-8">{title}</Text>
+      <View className="flex-1 justify-center px-4 pb-8 pt-12">
+        <View className="mb-4 flex-row items-start justify-between px-1">
+          <View className="relative flex-1 pr-3">
+            <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-full bg-black" />
+            <View className="h-14 rounded-full border-[3px] border-black bg-[#FDF9F1]" />
+          </View>
 
-      <View className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-md">
-        <TextInput
-          className="border-b border-gray-300 py-3 mb-5 text-base text-gray-800"
-          placeholder="Correo electrónico"
-          placeholderTextColor="#9ca3af"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-        />
+          <View className="relative mr-1 mt-1">
+            <View className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-full bg-black" />
+            <View className="h-14 w-14 items-center justify-center rounded-full border-[3px] border-black bg-[#FDF9F1]">
+              <Text className="text-2xl">✂️</Text>
+            </View>
+          </View>
+        </View>
 
-        <TextInput
-          className="border-b border-gray-300 py-3 mb-5 text-base text-gray-800"
-          placeholder="Contraseña"
-          placeholderTextColor="#9ca3af"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+        <View className="relative mt-4">
+          <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[34px] bg-black" />
+          <View className="rounded-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pb-8 pt-16">
+            <View className="absolute -top-12 right-6 z-10 items-center">
+              <Text className="text-6xl">🐱</Text>
+            </View>
 
-        {screen === 'signup' ? (
-          <TextInput
-            className="border-b border-gray-300 py-3 mb-8 text-base text-gray-800"
-            placeholder="Confirmar contraseña"
-            placeholderTextColor="#9ca3af"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            editable={!loading}
-          />
-        ) : (
-          <View className="mb-8" />
-        )}
+            <Text className="text-3xl font-black text-[#1E140D]">Control de Notas</Text>
+            <Text className="mt-2 text-base font-medium text-[#5E5045]">{title}</Text>
+            <Text className="mt-1 text-sm leading-5 text-[#7A6857]">
+              Entra a tu libreta bonita y organiza tus clases con calma.
+            </Text>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#3b82f6" />
-        ) : (
-          <>
-            <TouchableOpacity
-              onPress={screen === 'login' ? iniciarSesion : registrarse}
-              className="bg-blue-500 py-4 rounded-xl items-center mb-4 active:bg-blue-600"
-            >
-              <Text className="text-white font-bold text-base">
-                {screen === 'login' ? 'Entrar' : 'Crear cuenta'}
-              </Text>
-            </TouchableOpacity>
+            <View className="mt-6 gap-4">
+              <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
+                  Correo electrónico
+                </Text>
+                <TextInput
+                  className="text-base font-medium text-black"
+                  placeholder="profe@correo.com"
+                  placeholderTextColor="#9f8b78"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!loading}
+                />
+              </View>
 
-            {screen === 'login' ? (
-              <TouchableOpacity onPress={goToSignup} className="py-4 items-center">
-                <Text className="text-blue-500 text-sm">Crear cuenta nueva</Text>
-              </TouchableOpacity>
+              <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
+                  Contraseña
+                </Text>
+                <TextInput
+                  className="text-base font-medium text-black"
+                  placeholder="Tu contraseña"
+                  placeholderTextColor="#9f8b78"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!loading}
+                />
+              </View>
+
+              {screen === 'signup' ? (
+                <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
+                  <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
+                    Confirmar contraseña
+                  </Text>
+                  <TextInput
+                    className="text-base font-medium text-black"
+                    placeholder="Repite tu contraseña"
+                    placeholderTextColor="#9f8b78"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                    editable={!loading}
+                  />
+                </View>
+              ) : null}
+            </View>
+
+            {loading ? (
+              <View className="mt-8 items-center">
+                <ActivityIndicator size="large" color="#000000" />
+                <Text className="mt-3 text-sm font-bold text-[#5E5045]">
+                  Preparando tu libreta...
+                </Text>
+              </View>
             ) : (
-              <TouchableOpacity onPress={goToLogin} className="py-4 items-center">
-                <Text className="text-blue-500 text-sm">Ya tengo cuenta, iniciar sesión</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  onPress={screen === 'login' ? iniciarSesion : registrarse}
+                  activeOpacity={0.9}
+                  className="mt-7 rounded-[24px] border-[3px] border-black bg-[#FFB6C9] px-5 py-4"
+                >
+                  <Text className="text-center text-base font-black text-black">
+                    {screen === 'login' ? 'Entrar a mi libreta' : 'Crear cuenta'}
+                  </Text>
+                </TouchableOpacity>
+
+                <View className="mt-4 rounded-[22px] border-[3px] border-dashed border-black bg-[#F7E7C6] px-4 py-3">
+                  <Text className="text-center text-sm font-medium text-[#5E5045]">
+                    {screen === 'login'
+                      ? '¿Primera vez por aquí?'
+                      : '¿Ya tienes una cuenta creada?'}
+                  </Text>
+
+                  {screen === 'login' ? (
+                    <TouchableOpacity onPress={goToSignup} className="mt-2 items-center">
+                      <Text className="text-sm font-black text-black">Crear cuenta nueva</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={goToLogin} className="mt-2 items-center">
+                      <Text className="text-sm font-black text-black">
+                        Ya tengo cuenta, iniciar sesión
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
             )}
-          </>
-        )}
+          </View>
+        </View>
       </View>
     </View>
   );
