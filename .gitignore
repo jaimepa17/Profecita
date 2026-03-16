@@ -9,6 +9,16 @@ dist/
 web-build/
 expo-env.d.ts
 
+# IDEs and editors
+.vscode/
+.idea/
+.cloud/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 # Native
 .kotlin/
 *.orig.*
