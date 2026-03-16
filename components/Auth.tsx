@@ -18,6 +18,22 @@ type NotificationState = {
   message: string;
 };
 
+// Component for notebook rules/lines
+const NotebookLines = () => (
+  <View className="absolute inset-0 overflow-hidden rounded-[34px] z-0 pointer-events-none">
+    {/* Vertical pink margin line */}
+    <View className="absolute top-0 bottom-0 left-10 w-[2px] bg-red-300/60" />
+    <View className="absolute top-0 bottom-0 left-[42px] w-[1px] bg-red-300/30" />
+    
+    {/* Horizontal slight blue lines */}
+    <View className="absolute inset-0 pt-20">
+      {Array.from({ length: 15 }).map((_, i) => (
+        <View key={`line-${i}`} className="w-full h-8 border-b border-blue-200/40" />
+      ))}
+    </View>
+  </View>
+);
+
 export default function Auth() {
   const [screen, setScreen] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -136,7 +152,7 @@ export default function Auth() {
   const title = screen === 'login' ? 'Iniciar Sesion' : 'Crear Cuenta';
 
   return (
-    <View className="flex-1 bg-[#AF8F76]">
+    <View className="flex-1 bg-[#D2B48C]">
       <NotificationBar
         visible={notification.visible}
         type={notification.type}
@@ -144,9 +160,10 @@ export default function Auth() {
         onClose={closeNotification}
       />
 
-      <View className="flex-1 justify-center px-4 pb-8 pt-12">
-        <View className="mb-4 flex-row items-start justify-between px-1">
-          <View className="relative flex-1 pr-3">
+      <View className="flex-1 justify-center items-center px-4 pb-8 pt-12">
+        <View className="w-full max-w-md">
+          <View className="mb-4 flex-row items-start justify-between px-1">
+            <View className="relative flex-1 pr-3">
             <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-full bg-black" />
             <View className="h-14 rounded-full border-[3px] border-black bg-[#FDF9F1]" />
           </View>
@@ -160,111 +177,133 @@ export default function Auth() {
         </View>
 
         <View className="relative mt-4">
-          <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[34px] bg-black" />
-          <View className="rounded-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pb-8 pt-16">
-            <View className="absolute -top-12 right-6 z-10 items-center">
-              <Text className="text-6xl">🐱</Text>
-            </View>
-
-            <Text className="text-3xl font-black text-[#1E140D]">Control de Notas</Text>
-            <Text className="mt-2 text-base font-medium text-[#5E5045]">{title}</Text>
-            <Text className="mt-1 text-sm leading-5 text-[#7A6857]">
-              Entra a tu libreta bonita y organiza tus clases con calma.
-            </Text>
-
-            <View className="mt-6 gap-4">
-              <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
-                  Correo electrónico
-                </Text>
-                <TextInput
-                  className="text-base font-medium text-black"
-                  placeholder="profe@correo.com"
-                  placeholderTextColor="#9f8b78"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  editable={!loading}
-                />
+          <View className="absolute inset-x-0 bottom-[-4px] translate-x-1.5 translate-y-1.5 h-full rounded-[34px] bg-black" />
+          <View className="rounded-[34px] border-[4px] border-black bg-[#FDF9F1] px-6 pb-10 pt-12 min-h-[500px] overflow-hidden">
+            <NotebookLines />
+            
+            {/* Main Content wrapper with z-index to stay above lines */}
+            <View className="z-10 relative">
+              <View className="absolute -top-14 right-4 z-40 items-center bg-[#FDF9F1] rounded-t-[34px] border-t-[4px] border-l-[4px] border-r-[4px] border-black px-2 pt-2 -rotate-[10deg] shadow-lg">
+                <Text className="text-5xl">🐱</Text>
               </View>
 
-              <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
-                  Contraseña
-                </Text>
-                <TextInput
-                  className="text-base font-medium text-black"
-                  placeholder="Tu contraseña"
-                  placeholderTextColor="#9f8b78"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  editable={!loading}
-                />
-              </View>
+              <Text className="text-[32px] font-black tracking-tighter text-[#1E140D] mt-2">
+                Control de Notas
+              </Text>
+              <Text className="mt-1 text-lg font-bold text-[#5E5045]">{title}</Text>
+              <Text className="mt-1 mb-6 text-sm leading-5 font-semibold text-[#8A7968]">
+                Entra a tu libreta bonita y organiza tus clases con calma.
+              </Text>
 
-              {screen === 'signup' ? (
-                <View className="rounded-[24px] border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                  <Text className="mb-2 text-xs font-bold uppercase tracking-wide text-[#7A6857]">
-                    Confirmar contraseña
-                  </Text>
-                  <TextInput
-                    className="text-base font-medium text-black"
-                    placeholder="Repite tu contraseña"
-                    placeholderTextColor="#9f8b78"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry
-                    editable={!loading}
-                  />
+              <View className="mt-2 gap-5">
+                <View className="relative">
+                  <View className="absolute inset-0 rounded-[20px] bg-black translate-x-1 translate-y-1" />
+                  <View className="rounded-[20px] border-[3px] border-black bg-white px-4 py-3">
+                    <Text className="mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#7A6857]">
+                      Correo electrónico
+                    </Text>
+                    <TextInput
+                      className="text-base font-bold text-black"
+                      placeholder="profe@correo.com"
+                      placeholderTextColor="#9f8b78"
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      editable={!loading}
+                    />
+                  </View>
                 </View>
-              ) : null}
-            </View>
 
-            {loading ? (
-              <View className="mt-8 items-center">
-                <ActivityIndicator size="large" color="#000000" />
-                <Text className="mt-3 text-sm font-bold text-[#5E5045]">
-                  Preparando tu libreta...
-                </Text>
+                <View className="relative">
+                  <View className="absolute inset-0 rounded-[20px] bg-black translate-x-1 translate-y-1" />
+                  <View className="rounded-[20px] border-[3px] border-black bg-white px-4 py-3">
+                    <Text className="mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#7A6857]">
+                      Contraseña
+                    </Text>
+                    <TextInput
+                      className="text-base font-bold text-black"
+                      placeholder="Tu contraseña"
+                      placeholderTextColor="#9f8b78"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {screen === 'signup' ? (
+                  <View className="relative">
+                    <View className="absolute inset-0 rounded-[20px] bg-black translate-x-1 translate-y-1" />
+                    <View className="rounded-[20px] border-[3px] border-black bg-white px-4 py-3">
+                      <Text className="mb-1.5 text-[11px] font-black uppercase tracking-widest text-[#7A6857]">
+                        Confirmar contraseña
+                      </Text>
+                      <TextInput
+                        className="text-base font-bold text-black"
+                        placeholder="Repite tu contraseña"
+                        placeholderTextColor="#9f8b78"
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        secureTextEntry
+                        editable={!loading}
+                      />
+                    </View>
+                  </View>
+                ) : null}
               </View>
-            ) : (
-              <>
-                <TouchableOpacity
-                  onPress={screen === 'login' ? iniciarSesion : registrarse}
-                  activeOpacity={0.9}
-                  className="mt-7 rounded-[24px] border-[3px] border-black bg-[#FFB6C9] px-5 py-4"
-                >
-                  <Text className="text-center text-base font-black text-black">
-                    {screen === 'login' ? 'Entrar a mi libreta' : 'Crear cuenta'}
-                  </Text>
-                </TouchableOpacity>
 
-                <View className="mt-4 rounded-[22px] border-[3px] border-dashed border-black bg-[#F7E7C6] px-4 py-3">
-                  <Text className="text-center text-sm font-medium text-[#5E5045]">
-                    {screen === 'login'
-                      ? '¿Primera vez por aquí?'
-                      : '¿Ya tienes una cuenta creada?'}
+              {loading ? (
+                <View className="mt-8 items-center">
+                  <ActivityIndicator size="large" color="#000000" />
+                  <Text className="mt-3 text-sm font-bold text-[#5E5045]">
+                    Preparando tu libreta...
                   </Text>
-
-                  {screen === 'login' ? (
-                    <TouchableOpacity onPress={goToSignup} className="mt-2 items-center">
-                      <Text className="text-sm font-black text-black">Crear cuenta nueva</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity onPress={goToLogin} className="mt-2 items-center">
-                      <Text className="text-sm font-black text-black">
-                        Ya tengo cuenta, iniciar sesión
+                </View>
+              ) : (
+                <>
+                  <View className="relative mt-8">
+                    <View className="absolute inset-0 rounded-[20px] bg-black translate-x-1 translate-y-1" />
+                    <TouchableOpacity
+                      onPress={screen === 'login' ? iniciarSesion : registrarse}
+                      activeOpacity={0.8}
+                      className="rounded-[20px] border-[3px] border-black bg-[#FF9EB1] px-5 py-3.5 items-center justify-center shadow-sm"
+                    >
+                      <Text className="text-[17px] font-black tracking-wide text-black shadow-black shadow-sm drop-shadow-sm">
+                        {screen === 'login' ? 'Entrar a mi libreta' : 'Crear cuenta'}
                       </Text>
                     </TouchableOpacity>
-                  )}
-                </View>
-              </>
-            )}
+                  </View>
+
+                  <View className="mt-8 rounded-[16px] border-[3px] border-dashed border-[#A89481] bg-transparent px-4 py-3">
+                    <Text className="text-center text-sm font-semibold text-[#7A6857]">
+                      {screen === 'login' ? '¿Primera vez por aquí?' : '¿Ya tienes una cuenta creada?'}
+                    </Text>
+
+                    {screen === 'login' ? (
+                      <TouchableOpacity onPress={goToSignup} className="mt-2 items-center">
+                        <Text className="text-sm font-black text-black">Crear cuenta nueva</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity onPress={goToLogin} className="mt-2 items-center">
+                        <Text className="text-sm font-black text-black">
+                          Ya tengo cuenta, iniciar sesión
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </>
+              )}
+              
+              <View className="absolute -bottom-10 -left-6 z-40 items-center rotate-[15deg] opacity-90">
+                <Text className="text-5xl">🪴</Text>
+              </View>
+            </View>
           </View>
         </View>
       </View>
+    </View>
     </View>
   );
 }
