@@ -51,6 +51,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+
+
 # generated native folders
 /ios
 /android
+skills-lock.json
+.agents/
