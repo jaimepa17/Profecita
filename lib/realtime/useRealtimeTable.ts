@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { RealtimePostgresChangesPayload, RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 type UseRealtimeTableParams<T extends { id: string }> = {
@@ -26,20 +26,38 @@ export function useRealtimeTable<T extends { id: string }>({
   onDelete,
   onForegroundSync,
 }: UseRealtimeTableParams<T>) {
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const appStateSubRef = useRef<any>(null);
+
   useEffect(() => {
+    // Si está deshabilitado, limpiar canal existente
     if (!enabled) {
+      if (channelRef.current) {
+        void supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
       return;
     }
 
+    // Limpiar canal anterior si existe
+    if (channelRef.current) {
+      void supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     const channel = supabase
-      .channel(channelName)
+      .channel(channelName, {
+        config: {
+          broadcast: { ack: true },
+        },
+      })
       .on(
         'postgres_changes',
         {
           event: '*',
           schema,
           table,
-          filter,
+          filter: filter || undefined,
         },
         (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           if (payload.eventType === 'INSERT' && onInsert) {
@@ -57,33 +75,32 @@ export function useRealtimeTable<T extends { id: string }>({
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         if (status === 'SUBSCRIBED' && onForegroundSync) {
-          void onForegroundSync();
+          await onForegroundSync();
         }
       });
 
-    const appStateSub = onForegroundSync
-      ? AppState.addEventListener('change', (state) => {
-          if (state === 'active') {
-            void onForegroundSync();
-          }
-        })
-      : null;
+    channelRef.current = channel;
+
+    // Listener de cambios de app state
+    if (onForegroundSync) {
+      appStateSubRef.current = AppState.addEventListener('change', (state) => {
+        if (state === 'active') {
+          void onForegroundSync();
+        }
+      });
+    }
 
     return () => {
-      appStateSub?.remove();
-      void supabase.removeChannel(channel);
+      if (appStateSubRef.current) {
+        appStateSubRef.current.remove();
+        appStateSubRef.current = null;
+      }
+      if (channelRef.current) {
+        void supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [
-    enabled,
-    channelName,
-    schema,
-    table,
-    filter,
-    onInsert,
-    onUpdate,
-    onDelete,
-    onForegroundSync,
-  ]);
+  }, [enabled, channelName, schema, table, filter, onInsert, onUpdate, onDelete, onForegroundSync]);
 }
