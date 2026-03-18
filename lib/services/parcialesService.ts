@@ -47,6 +47,44 @@ function validatePeso(peso?: number): string | null {
   return null;
 }
 
+function roundTo2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+async function validateGrupoParcialRules(
+  grupoId: string,
+  nextPeso: number,
+  excludeParcialId?: string
+): Promise<ServiceResult<null>> {
+  const { data, error } = await supabase
+    .from('parciales')
+    .select('id, peso_porcentaje')
+    .eq('grupo_id', grupoId);
+
+  if (error) {
+    return fail('No se pudo validar la configuración de parciales del grupo.', error.message);
+  }
+
+  const parciales = (data as Array<{ id: string; peso_porcentaje: number }>) ?? [];
+  const filtered = excludeParcialId
+    ? parciales.filter((item) => item.id !== excludeParcialId)
+    : parciales;
+
+  const sumaActual = roundTo2(
+    filtered.reduce((acc, item) => acc + Number(item.peso_porcentaje ?? 0), 0)
+  );
+  const sumaFinal = roundTo2(sumaActual + nextPeso);
+
+  if (sumaFinal > 100) {
+    const disponible = roundTo2(Math.max(0, 100 - sumaActual));
+    return fail(
+      `El peso del parcial supera el límite del grupo. Disponible: ${disponible}. Suma final: ${sumaFinal}.`
+    );
+  }
+
+  return ok(null);
+}
+
 export async function listParciales(): Promise<ServiceResult<Parcial[]>> {
   const { data, error } = await supabase
     .from('parciales')
@@ -115,10 +153,19 @@ export async function createParcial(
     return fail(validationPeso);
   }
 
+  if (input.peso_porcentaje === undefined) {
+    return fail('El peso del parcial es obligatorio.');
+  }
+
+  const reglas = await validateGrupoParcialRules(input.grupo_id, input.peso_porcentaje);
+  if (!reglas.ok) {
+    return reglas;
+  }
+
   const payload = {
     grupo_id: input.grupo_id,
     nombre: input.nombre.trim(),
-    peso_porcentaje: input.peso_porcentaje ?? 0,
+    peso_porcentaje: input.peso_porcentaje,
   };
 
   const { data, error } = await supabase
@@ -142,6 +189,16 @@ export async function updateParcial(
     return fail('El id del parcial es obligatorio.');
   }
 
+  const currentResult = await getParcialById(id);
+  if (!currentResult.ok) {
+    return fail('No se pudo validar el parcial actual.', currentResult.error);
+  }
+
+  if (!currentResult.data) {
+    return fail('El parcial que intentas actualizar no existe.');
+  }
+
+  const current = currentResult.data;
   const updates: UpdateParcialInput = {};
 
   if (input.nombre !== undefined) {
@@ -162,6 +219,12 @@ export async function updateParcial(
 
   if (Object.keys(updates).length === 0) {
     return fail('No hay cambios para actualizar en el parcial.');
+  }
+
+  const nextPeso = updates.peso_porcentaje ?? current.peso_porcentaje;
+  const reglas = await validateGrupoParcialRules(current.grupo_id, nextPeso, current.id);
+  if (!reglas.ok) {
+    return reglas;
   }
 
   const { data, error } = await supabase

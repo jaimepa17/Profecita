@@ -22,20 +22,43 @@ export type UpdateNotaInput = {
   observaciones?: string | null;
 };
 
-function validatePuntaje(puntaje?: number): string | null {
-  if (puntaje === undefined) {
-    return 'El puntaje es obligatorio.';
-  }
+function roundTo2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
+function validatePuntaje(puntaje: number, maxPermitido: number): string | null {
   if (Number.isNaN(puntaje)) {
     return 'El puntaje debe ser un número válido.';
   }
 
-  if (puntaje < 0 || puntaje > 100) {
-    return 'El puntaje debe estar entre 0 y 100.';
+  if (puntaje < 0 || puntaje > maxPermitido) {
+    return `El puntaje debe estar entre 0 y ${maxPermitido}.`;
   }
 
   return null;
+}
+
+async function getActividadMaxPuntaje(actividadId: string): Promise<ServiceResult<number>> {
+  const { data, error } = await supabase
+    .from('actividades')
+    .select('peso_porcentaje, puntaje_maximo')
+    .eq('id', actividadId)
+    .maybeSingle();
+
+  if (error) {
+    return fail('No se pudo validar la actividad para registrar la nota.', error.message);
+  }
+
+  if (!data) {
+    return fail('La actividad seleccionada no existe.');
+  }
+
+  const peso = Number((data as { peso_porcentaje?: number }).peso_porcentaje ?? 0);
+  const puntajeMaximo = Number((data as { puntaje_maximo?: number }).puntaje_maximo ?? 0);
+
+  // Regla de negocio actual: la nota se limita por el valor configurado de la actividad.
+  const maxPermitido = roundTo2(peso > 0 ? peso : puntajeMaximo > 0 ? puntajeMaximo : 100);
+  return ok(maxPermitido);
 }
 
 function normalizeObservaciones(observaciones?: string | null): string | null {
@@ -122,7 +145,16 @@ export async function createNota(input: CreateNotaInput): Promise<ServiceResult<
     return fail('Actividad y estudiante son obligatorios para registrar la nota.');
   }
 
-  const validationPuntaje = validatePuntaje(input.puntaje_obtenido);
+  if (input.puntaje_obtenido === undefined) {
+    return fail('El puntaje es obligatorio.');
+  }
+
+  const maxPermitidoResult = await getActividadMaxPuntaje(input.actividad_id);
+  if (!maxPermitidoResult.ok) {
+    return maxPermitidoResult;
+  }
+
+  const validationPuntaje = validatePuntaje(input.puntaje_obtenido, maxPermitidoResult.data);
   if (validationPuntaje) {
     return fail(validationPuntaje);
   }
@@ -170,7 +202,21 @@ export async function updateNota(
   const updates: UpdateNotaInput = {};
 
   if (input.puntaje_obtenido !== undefined) {
-    const validationPuntaje = validatePuntaje(input.puntaje_obtenido);
+    const currentNotaResult = await getNotaById(id);
+    if (!currentNotaResult.ok) {
+      return currentNotaResult;
+    }
+
+    if (!currentNotaResult.data) {
+      return fail('La nota que intentas actualizar no existe.');
+    }
+
+    const maxPermitidoResult = await getActividadMaxPuntaje(currentNotaResult.data.actividad_id);
+    if (!maxPermitidoResult.ok) {
+      return maxPermitidoResult;
+    }
+
+    const validationPuntaje = validatePuntaje(input.puntaje_obtenido, maxPermitidoResult.data);
     if (validationPuntaje) {
       return fail(validationPuntaje);
     }
