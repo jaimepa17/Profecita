@@ -15,10 +15,10 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-              "foregroundImage": "./assets/adaptive-icon.png",
-              "backgroundColor": "#FFD1DC" 
-      },
+            "adaptiveIcon": {
+              "foregroundImage": "./assets/android-icon-foreground.png",
+              "backgroundColor": "#FFD1DC"
+            },
       "predictiveBackGestureEnabled": false,
       "package": "com.jaimepaok17.controlnotas"
     },
