@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  Modal,
+  Pressable,
   Text,
   TouchableOpacity,
   View,
@@ -9,8 +11,8 @@ import {
 import AccountPanel from '../components/AccountPanel';
 import CarreraFormModal from '../components/CarreraFormModal';
 import ConfirmActionModal from '../components/ConfirmActionModal';
-import LoadingScreen from '../components/LoadingScreen';
 import { supabase } from '@/lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createCarrera,
   deleteCarrera,
@@ -26,11 +28,15 @@ type Carrera = CarreraModel;
 type HomeProps = {
   userEmail?: string;
   onOpenStudents: () => void;
+  onOpenRegistroNotasActividad: () => void;
   onOpenCarrera: (carrera: Carrera) => void;
 };
 
 const PaperGrid = () => (
-  <View className="absolute inset-0 overflow-hidden rounded-[34px] pointer-events-none">
+  <View
+    className="absolute inset-0 overflow-hidden rounded-[34px]"
+    style={{ pointerEvents: 'none' }}
+  >
     <View className="absolute inset-0 flex-row">
       {Array.from({ length: 22 }).map((_, i) => (
         <View key={`v-${i}`} className="h-full w-6 border-r border-[#DCCEC2]/60" />
@@ -45,15 +51,20 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeProps) {
+export default function Home({
+  userEmail,
+  onOpenStudents,
+  onOpenRegistroNotasActividad,
+  onOpenCarrera,
+}: HomeProps) {
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [statsByCarrera, setStatsByCarrera] = useState<Record<string, CarreraStats>>({});
   const [statsLoadingByCarrera, setStatsLoadingByCarrera] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [pageReady, setPageReady] = useState(false);
   const [accountPanelVisible, setAccountPanelVisible] = useState(false);
   const [createCarreraVisible, setCreateCarreraVisible] = useState(false);
+  const [quickActionsVisible, setQuickActionsVisible] = useState(false);
   const [pendingDeleteCarrera, setPendingDeleteCarrera] = useState<Carrera | null>(null);
   const [realtimeUserId, setRealtimeUserId] = useState<string | null>(null);
   const { run: runCreateCarrera, isRunning: creatingCarrera } = useSingleFlight();
@@ -78,6 +89,7 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
     }
 
     setCarreras(result.data);
+    await AsyncStorage.setItem('carreras_cache', JSON.stringify(result.data));
     setLoading(false);
     setInitialLoaded(true);
   }, [initialLoaded]);
@@ -176,6 +188,19 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
     let mounted = true;
 
     const bootstrap = async () => {
+      // Cargar desde cache primero
+      try {
+        const cached = await AsyncStorage.getItem('carreras_cache');
+        if (cached && mounted) {
+          setCarreras(JSON.parse(cached));
+          setInitialLoaded(true);
+          setLoading(false);
+        }
+      } catch (e) {
+        // Ignorar errores de cache
+      }
+
+      // Luego cargar desde API (background update)
       await cargarCarreras();
 
       const { data } = await supabase.auth.getSession();
@@ -208,7 +233,6 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
       if (carreras.length === 0) {
         setStatsByCarrera({});
         setStatsLoadingByCarrera({});
-        setPageReady(true);
         return;
       }
 
@@ -230,7 +254,6 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
         setStatsByCarrera({});
       }
       setStatsLoadingByCarrera({});
-      setPageReady(true);
     };
 
     void loadStats();
@@ -325,15 +348,6 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
   const Header = () => (
     <View>
       <Text className="text-2xl font-black text-[#1E140D]">¡Hola, Profe!</Text>
-
-      <TouchableOpacity
-        accessibilityRole="button"
-        activeOpacity={0.9}
-        onPress={onOpenStudents}
-        className="mt-2 self-start rounded-full border-[3px] border-black bg-[#D7ECFF] px-4 py-1.5"
-      >
-        <Text className="text-xs font-black text-black">Ir a Estudiantes</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -366,10 +380,6 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
     </View>
   );
 
-  if (loading || !pageReady) {
-    return <LoadingScreen message="Cargando tu libreta..." emoji="📒" />;
-  }
-
   return (
     <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
       <AccountPanel
@@ -387,6 +397,60 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
         onClose={closeCreateCarrera}
         onSubmit={crearNuevaCarrera}
       />
+
+      <Modal
+        visible={quickActionsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQuickActionsVisible(false)}
+      >
+        <Pressable className="flex-1 bg-black/35" onPress={() => setQuickActionsVisible(false)}>
+          <View className="flex-1 justify-end px-5 pb-28">
+            <Pressable className="rounded-[28px] border-[4px] border-black bg-[#FDF9F1] p-4">
+              <Text className="text-lg font-black text-black">Acciones rápidas</Text>
+              <Text className="mt-1 text-sm font-semibold text-[#6B5A4A]">
+                Elige qué deseas hacer
+              </Text>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => {
+                  setQuickActionsVisible(false);
+                  openCreateCarrera();
+                }}
+                className="mt-4 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-3"
+              >
+                <Text className="text-sm font-black text-black">+ Crear carrera</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => {
+                  setQuickActionsVisible(false);
+                  onOpenStudents();
+                }}
+                className="mt-3 rounded-2xl border-[3px] border-black bg-[#D7ECFF] px-4 py-3"
+              >
+                <Text className="text-sm font-black text-black">Ir a Estudiantes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => {
+                  setQuickActionsVisible(false);
+                  onOpenRegistroNotasActividad();
+                }}
+                className="mt-3 rounded-2xl border-[3px] border-black bg-[#BDE9C7] px-4 py-3"
+              >
+                <Text className="text-sm font-black text-black">Registrar notas por actividad</Text>
+              </TouchableOpacity>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
       <ConfirmActionModal
         visible={!!pendingDeleteCarrera}
@@ -465,8 +529,7 @@ export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeP
           <TouchableOpacity
             accessibilityRole="button"
             activeOpacity={0.9}
-            disabled={creatingCarrera}
-            onPress={openCreateCarrera}
+            onPress={() => setQuickActionsVisible(true)}
             className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FFB6C9]"
           >
             <Text className="text-4xl font-black text-black">+</Text>
