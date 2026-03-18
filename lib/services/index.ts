@@ -10,3 +10,4 @@ export * from './grupoEstudiantesService';
 export * from './parcialesService';
 export * from './actividadesService';
 export * from './notasService';
+export * from './statsService';

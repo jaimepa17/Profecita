@@ -1,4 +1,5 @@
-import { ServiceResult, notImplemented } from './_result';
+import { supabase } from '@/lib/supabase';
+import { ServiceResult, fail, ok } from './_result';
 
 export type Anio = {
   id: string;
@@ -16,25 +17,139 @@ export type UpdateAnioInput = {
   nombre?: string;
 };
 
+function validateNombre(nombre?: string): string | null {
+  const clean = nombre?.trim();
+  if (!clean) {
+    return 'El nombre del año es obligatorio.';
+  }
+  if (clean.length > 50) {
+    return 'El nombre del año no puede superar 50 caracteres.';
+  }
+  return null;
+}
+
 export async function listAnios(): Promise<ServiceResult<Anio[]>> {
-  return notImplemented('anios.listAnios');
+  const { data, error } = await supabase
+    .from('anios')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return fail('No se pudieron cargar los años.', error.message);
+  }
+
+  return ok((data as Anio[]) ?? []);
 }
 
-export async function getAnioById(_id: string): Promise<ServiceResult<Anio | null>> {
-  return notImplemented('anios.getAnioById');
+export async function listAniosByCarrera(carreraId: string): Promise<ServiceResult<Anio[]>> {
+  if (!carreraId?.trim()) {
+    return fail('El id de la carrera es obligatorio.');
+  }
+
+  const { data, error } = await supabase
+    .from('anios')
+    .select('*')
+    .eq('carrera_id', carreraId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return fail('No se pudieron cargar los años de la carrera.', error.message);
+  }
+
+  return ok((data as Anio[]) ?? []);
 }
 
-export async function createAnio(_input: CreateAnioInput): Promise<ServiceResult<Anio>> {
-  return notImplemented('anios.createAnio');
+export async function getAnioById(id: string): Promise<ServiceResult<Anio | null>> {
+  if (!id?.trim()) {
+    return fail('El id del año es obligatorio.');
+  }
+
+  const { data, error } = await supabase
+    .from('anios')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    return fail('No se pudo consultar el año.', error.message);
+  }
+
+  return ok((data as Anio | null) ?? null);
+}
+
+export async function createAnio(input: CreateAnioInput): Promise<ServiceResult<Anio>> {
+  if (!input.carrera_id?.trim()) {
+    return fail('La carrera es obligatoria para crear el año.');
+  }
+
+  const validation = validateNombre(input.nombre);
+  if (validation) {
+    return fail(validation);
+  }
+
+  const payload = {
+    carrera_id: input.carrera_id,
+    nombre: input.nombre.trim(),
+  };
+
+  const { data, error } = await supabase
+    .from('anios')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) {
+    return fail('No se pudo crear el año.', error.message);
+  }
+
+  return ok(data as Anio);
 }
 
 export async function updateAnio(
-  _id: string,
-  _input: UpdateAnioInput
+  id: string,
+  input: UpdateAnioInput
 ): Promise<ServiceResult<Anio>> {
-  return notImplemented('anios.updateAnio');
+  if (!id?.trim()) {
+    return fail('El id del año es obligatorio.');
+  }
+
+  const updates: UpdateAnioInput = {};
+
+  if (input.nombre !== undefined) {
+    const validation = validateNombre(input.nombre);
+    if (validation) {
+      return fail(validation);
+    }
+    updates.nombre = input.nombre.trim();
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return fail('No hay cambios para actualizar en el año.');
+  }
+
+  const { data, error } = await supabase
+    .from('anios')
+    .update(updates)
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) {
+    return fail('No se pudo actualizar el año.', error.message);
+  }
+
+  return ok(data as Anio);
 }
 
-export async function deleteAnio(_id: string): Promise<ServiceResult<{ id: string }>> {
-  return notImplemented('anios.deleteAnio');
+export async function deleteAnio(id: string): Promise<ServiceResult<{ id: string }>> {
+  if (!id?.trim()) {
+    return fail('El id del año es obligatorio.');
+  }
+
+  const { error } = await supabase.from('anios').delete().eq('id', id);
+  if (error) {
+    return fail('No se pudo eliminar el año.', error.message);
+  }
+
+  return ok({ id });
 }

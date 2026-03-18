@@ -9,6 +9,7 @@ import {
 import { signInWithEmail, signUpWithEmail } from '@/lib/authLogic';
 import NotificationBar from '@/components/NotificationBar';
 import { checkSupabaseAuthHealth } from '@/lib/serviceMonitor';
+import { useSingleFlight } from '@/lib/hooks/useSingleFlight';
 
 type NotificationType = 'success' | 'warning' | 'error';
 
@@ -39,7 +40,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { run: runAuthAction, isRunning: loading } = useSingleFlight();
   const [notification, setNotification] = useState<NotificationState>({
     visible: false,
     type: 'warning',
@@ -103,38 +104,37 @@ export default function Auth() {
   }, []);
 
   const iniciarSesion = async () => {
-    setLoading(true);
-    const result = await signInWithEmail(email, password);
-    if (!result.ok) {
-      const debugPart = __DEV__ && result.debugMessage ? `\nDetalle: ${result.debugMessage}` : '';
-      showNotification(
-        'error',
-        `${result.message ?? 'No se pudo iniciar sesión.'}${debugPart}`,
-        7000
-      );
-    }
-    setLoading(false);
+    await runAuthAction(async () => {
+      const result = await signInWithEmail(email, password);
+      if (!result.ok) {
+        const debugPart = __DEV__ && result.debugMessage ? `\nDetalle: ${result.debugMessage}` : '';
+        showNotification(
+          'error',
+          `${result.message ?? 'No se pudo iniciar sesión.'}${debugPart}`,
+          7000
+        );
+      }
+    });
   };
 
   const registrarse = async () => {
-    setLoading(true);
-    const result = await signUpWithEmail(email, password, confirmPassword);
+    await runAuthAction(async () => {
+      const result = await signUpWithEmail(email, password, confirmPassword);
 
-    if (!result.ok) {
-      const debugPart = __DEV__ && result.debugMessage ? `\nDetalle: ${result.debugMessage}` : '';
-      showNotification(
-        'error',
-        `${result.message ?? 'No se pudo crear la cuenta.'}${debugPart}`,
-        7000
-      );
-      setLoading(false);
-      return;
-    }
+      if (!result.ok) {
+        const debugPart = __DEV__ && result.debugMessage ? `\nDetalle: ${result.debugMessage}` : '';
+        showNotification(
+          'error',
+          `${result.message ?? 'No se pudo crear la cuenta.'}${debugPart}`,
+          7000
+        );
+        return;
+      }
 
-    showNotification('success', result.message ?? 'Registro exitoso.', 5500);
-    setConfirmPassword('');
-    setScreen('login');
-    setLoading(false);
+      showNotification('success', result.message ?? 'Registro exitoso.', 5500);
+      setConfirmPassword('');
+      setScreen('login');
+    });
   };
 
   const goToSignup = () => {
@@ -268,11 +268,19 @@ export default function Auth() {
                     </Text>
 
                     {screen === 'login' ? (
-                      <TouchableOpacity onPress={goToSignup} className="mt-2 items-center">
+                      <TouchableOpacity
+                        onPress={goToSignup}
+                        disabled={loading}
+                        className="mt-2 items-center"
+                      >
                         <Text className="text-sm font-black text-black">Crear cuenta nueva</Text>
                       </TouchableOpacity>
                     ) : (
-                      <TouchableOpacity onPress={goToLogin} className="mt-2 items-center">
+                      <TouchableOpacity
+                        onPress={goToLogin}
+                        disabled={loading}
+                        className="mt-2 items-center"
+                      >
                         <Text className="text-sm font-black text-black">
                           Ya tengo cuenta, iniciar sesión
                         </Text>

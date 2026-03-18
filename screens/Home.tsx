@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Text,
@@ -10,6 +9,7 @@ import {
 import AccountPanel from '../components/AccountPanel';
 import CarreraFormModal from '../components/CarreraFormModal';
 import ConfirmActionModal from '../components/ConfirmActionModal';
+import LoadingScreen from '../components/LoadingScreen';
 import { supabase } from '@/lib/supabase';
 import {
   createCarrera,
@@ -17,12 +17,16 @@ import {
   listCarreras,
   type Carrera as CarreraModel,
 } from '@/lib/services/carrerasService';
-import { useRealtimeTable } from '@/lib/realtime';
+import { getCarrerasStatsByIds, type CarreraStats } from '@/lib/services/statsService';
+import { useRealtimeCollection } from '@/lib/realtime';
+import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 
 type Carrera = CarreraModel;
 
 type HomeProps = {
   userEmail?: string;
+  onOpenStudents: () => void;
+  onOpenCarrera: (carrera: Carrera) => void;
 };
 
 const PaperGrid = () => (
@@ -41,31 +45,42 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function Home({ userEmail }: HomeProps) {
+export default function Home({ userEmail, onOpenStudents, onOpenCarrera }: HomeProps) {
   const [carreras, setCarreras] = useState<Carrera[]>([]);
+  const [statsByCarrera, setStatsByCarrera] = useState<Record<string, CarreraStats>>({});
+  const [statsLoadingByCarrera, setStatsLoadingByCarrera] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
-  const [signingOut, setSigningOut] = useState(false);
+  const [initialLoaded, setInitialLoaded] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
   const [accountPanelVisible, setAccountPanelVisible] = useState(false);
   const [createCarreraVisible, setCreateCarreraVisible] = useState(false);
-  const [creatingCarrera, setCreatingCarrera] = useState(false);
-  const [deletingCarreraId, setDeletingCarreraId] = useState<string | null>(null);
   const [pendingDeleteCarrera, setPendingDeleteCarrera] = useState<Carrera | null>(null);
   const [realtimeUserId, setRealtimeUserId] = useState<string | null>(null);
+  const { run: runCreateCarrera, isRunning: creatingCarrera } = useSingleFlight();
+  const { run: runSignOut, isRunning: signingOut } = useSingleFlight();
+  const { run: runDeleteCarrera, isRunning: isDeletingCarrera } =
+    useKeyedSingleFlight<string>();
 
   const cargarCarreras = useCallback(async () => {
-    setLoading(true);
+    // Solo mostrar loader si es la carga inicial
+    if (!initialLoaded) {
+      setLoading(true);
+    }
+
     const result = await listCarreras();
 
     if (!result.ok) {
       Alert.alert('No se pudieron cargar las carreras', result.error);
       setCarreras([]);
       setLoading(false);
+      setInitialLoaded(true);
       return;
     }
 
     setCarreras(result.data);
     setLoading(false);
-  }, []);
+    setInitialLoaded(true);
+  }, [initialLoaded]);
 
   const openCreateCarrera = () => {
     setCreateCarreraVisible(true);
@@ -79,41 +94,31 @@ export default function Home({ userEmail }: HomeProps) {
   };
 
   const crearNuevaCarrera = async (nombre: string) => {
-    if (creatingCarrera) {
-      return;
-    }
+    await runCreateCarrera(async () => {
+      const result = await createCarrera({ nombre });
 
-    setCreatingCarrera(true);
-    const result = await createCarrera({ nombre });
+      if (!result.ok) {
+        Alert.alert('No se pudo crear la carrera', result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      Alert.alert('No se pudo crear la carrera', result.error);
-      setCreatingCarrera(false);
-      return;
-    }
-
-    setCarreras((prev) => [result.data, ...prev]);
-    setCreateCarreraVisible(false);
-    setCreatingCarrera(false);
+      // Realtime se encargará de agregar la carrera automáticamente
+      setCreateCarreraVisible(false);
+    });
   };
 
   const ejecutarEliminarCarrera = async (carrera: Carrera) => {
-    if (deletingCarreraId) {
-      return;
-    }
+    await runDeleteCarrera(carrera.id, async () => {
+      const result = await deleteCarrera(carrera.id);
 
-    setDeletingCarreraId(carrera.id);
-    const result = await deleteCarrera(carrera.id);
+      if (!result.ok) {
+        Alert.alert('No se pudo eliminar la carrera', result.error);
+        return;
+      }
 
-    if (!result.ok) {
-      Alert.alert('No se pudo eliminar la carrera', result.error);
-      setDeletingCarreraId(null);
-      return;
-    }
-
-    setCarreras((prev) => prev.filter((item) => item.id !== carrera.id));
-    setDeletingCarreraId(null);
-    setPendingDeleteCarrera(null);
+      // Realtime se encargará de remover la carrera automáticamente
+      setPendingDeleteCarrera(null);
+    });
   };
 
   const confirmarEliminarCarrera = (carrera: Carrera) => {
@@ -121,7 +126,7 @@ export default function Home({ userEmail }: HomeProps) {
   };
 
   const cancelarEliminarCarrera = () => {
-    if (deletingCarreraId) {
+    if (pendingDeleteCarrera && isDeletingCarrera(pendingDeleteCarrera.id)) {
       return;
     }
     setPendingDeleteCarrera(null);
@@ -135,16 +140,12 @@ export default function Home({ userEmail }: HomeProps) {
   };
 
   const cerrarSesion = async () => {
-    if (signingOut) {
-      return;
-    }
-
-    setSigningOut(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      Alert.alert('No se pudo cerrar sesión', error.message);
-    }
-    setSigningOut(false);
+    await runSignOut(async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        Alert.alert('No se pudo cerrar sesión', error.message);
+      }
+    });
   };
 
   const cambiarCuenta = () => {
@@ -200,26 +201,51 @@ export default function Home({ userEmail }: HomeProps) {
     };
   }, [cargarCarreras]);
 
-  const handleInsertCarrera = useCallback((row: Carrera) => {
-    setCarreras((prev) => [row, ...prev.filter((item) => item.id !== row.id)]);
-  }, []);
+  useEffect(() => {
+    let mounted = true;
 
-  const handleUpdateCarrera = useCallback((row: Carrera) => {
-    setCarreras((prev) => prev.map((item) => (item.id === row.id ? row : item)));
-  }, []);
+    const loadStats = async () => {
+      if (carreras.length === 0) {
+        setStatsByCarrera({});
+        setStatsLoadingByCarrera({});
+        setPageReady(true);
+        return;
+      }
 
-  const handleDeleteCarrera = useCallback((row: { id: string }) => {
-    setCarreras((prev) => prev.filter((item) => item.id !== row.id));
-  }, []);
+      const loadingMap: Record<string, boolean> = {};
+      carreras.forEach((carrera) => {
+        loadingMap[carrera.id] = true;
+      });
+      setStatsLoadingByCarrera(loadingMap);
 
-  useRealtimeTable<Carrera>({
+      const statsResult = await getCarrerasStatsByIds(carreras.map((carrera) => carrera.id));
+
+      if (!mounted) {
+        return;
+      }
+
+      if (statsResult.ok) {
+        setStatsByCarrera(statsResult.data);
+      } else {
+        setStatsByCarrera({});
+      }
+      setStatsLoadingByCarrera({});
+      setPageReady(true);
+    };
+
+    void loadStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, [carreras]);
+
+  useRealtimeCollection<Carrera>({
     enabled: !!realtimeUserId,
     table: 'carreras',
     filter: realtimeUserId ? `profesor_id=eq.${realtimeUserId}` : undefined,
     channelName: `realtime:carreras:${realtimeUserId ?? 'anon'}`,
-    onInsert: handleInsertCarrera,
-    onUpdate: handleUpdateCarrera,
-    onDelete: handleDeleteCarrera,
+    setItems: setCarreras,
     onForegroundSync: cargarCarreras,
   });
 
@@ -227,7 +253,9 @@ export default function Home({ userEmail }: HomeProps) {
     const titulo =
       (typeof item.nombre === 'string' && item.nombre.trim()) ||
       `Carrera ${index + 1}`;
-    const isDeleting = deletingCarreraId === item.id;
+    const isDeleting = isDeletingCarrera(item.id);
+    const stats = statsByCarrera[item.id];
+    const statsLoading = !!statsLoadingByCarrera[item.id];
 
     return (
       <View className="mb-5">
@@ -249,14 +277,33 @@ export default function Home({ userEmail }: HomeProps) {
 
             <View className="rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
               <Text className="text-xs font-bold uppercase tracking-wide text-[#7A6857]">
-                Fecha de creación
+                Información de la carrera
               </Text>
-              <Text className="mt-1 text-base font-semibold text-black">
-                {new Date(item.created_at).toLocaleDateString('es-ES')}
-              </Text>
+
+              {statsLoading ? (
+                <Text className="mt-1 text-base font-semibold text-black">Cargando datos...</Text>
+              ) : (
+                <>
+                  <Text className="mt-1 text-base font-semibold text-black">
+                    {`Años: ${stats?.anios ?? 0}  •  Asignaturas: ${stats?.asignaturas ?? 0}`}
+                  </Text>
+                  <Text className="mt-1 text-base font-semibold text-black">
+                    {`Grupos: ${stats?.grupos ?? 0}  •  Estudiantes: ${stats?.estudiantes ?? 0}`}
+                  </Text>
+                </>
+              )}
             </View>
 
-            <View className="mt-4 items-end">
+            <View className="mt-4 flex-row justify-end gap-2">
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => onOpenCarrera(item)}
+                className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
+              >
+                <Text className="text-sm font-black text-black">Ver años</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
@@ -278,9 +325,15 @@ export default function Home({ userEmail }: HomeProps) {
   const Header = () => (
     <View>
       <Text className="text-2xl font-black text-[#1E140D]">¡Hola, Profe!</Text>
-      {/* <Text className="mt-1 text-base font-medium text-[#3A2B20]">
-        Organiza tus carreras como en una libreta bonita.
-      </Text> */}
+
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.9}
+        onPress={onOpenStudents}
+        className="mt-2 self-start rounded-full border-[3px] border-black bg-[#D7ECFF] px-4 py-1.5"
+      >
+        <Text className="text-xs font-black text-black">Ir a Estudiantes</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -313,14 +366,8 @@ export default function Home({ userEmail }: HomeProps) {
     </View>
   );
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-[#C5A07D] px-6">
-        <View className="absolute left-6 right-6 top-16 bottom-16 rounded-[36px] border-[3px] border-black bg-[#FDF9F1]" />
-        <ActivityIndicator size="large" color="#000000" />
-        <Text className="mt-4 text-base font-bold text-[#1E140D]">Cargando tu libreta...</Text>
-      </View>
-    );
+  if (loading || !pageReady) {
+    return <LoadingScreen message="Cargando tu libreta..." emoji="📒" />;
   }
 
   return (
@@ -349,7 +396,7 @@ export default function Home({ userEmail }: HomeProps) {
           : ''}
         confirmLabel="Eliminar"
         cancelLabel="Cancelar"
-        loading={!!deletingCarreraId}
+        loading={pendingDeleteCarrera ? isDeletingCarrera(pendingDeleteCarrera.id) : false}
         onCancel={cancelarEliminarCarrera}
         onConfirm={confirmarEliminarDesdeModal}
       />
