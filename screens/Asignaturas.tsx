@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
-import LoadingScreen from '@/components/LoadingScreen';
 import NameFormModal from '@/components/NameFormModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import {
   Asignatura,
@@ -49,7 +49,6 @@ export default function AsignaturasScreen({
   const [statsLoadingByAsignatura, setStatsLoadingByAsignatura] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [pageReady, setPageReady] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Asignatura | null>(null);
   const { run: runCreate, isRunning: creating } = useSingleFlight();
@@ -72,12 +71,36 @@ export default function AsignaturasScreen({
     }
 
     setAsignaturas(result.data);
+    await AsyncStorage.setItem(`asignaturas_${anio.id}_cache`, JSON.stringify(result.data));
     setLoading(false);
     setInitialLoaded(true);
   }, [anio.id, initialLoaded]);
 
   useEffect(() => {
-    void cargarAsignaturas();
+    let mounted = true;
+
+    const bootstrap = async () => {
+      // Cargar desde cache primero
+      try {
+        const cached = await AsyncStorage.getItem(`asignaturas_${anio.id}_cache`);
+        if (cached && mounted) {
+          setAsignaturas(JSON.parse(cached));
+          setInitialLoaded(true);
+          setLoading(false);
+        }
+      } catch (e) {
+        // Ignorar errores de cache
+      }
+
+      // Luego cargar desde API (background update)
+      await cargarAsignaturas();
+    };
+
+    void bootstrap();
+
+    return () => {
+      mounted = false;
+    };
   }, [cargarAsignaturas]);
 
   const crearNuevaAsignatura = async (nombre: string) => {
@@ -123,7 +146,6 @@ export default function AsignaturasScreen({
       if (asignaturas.length === 0) {
         setStatsByAsignatura({});
         setStatsLoadingByAsignatura({});
-        setPageReady(true);
         return;
       }
 
@@ -147,7 +169,6 @@ export default function AsignaturasScreen({
         setStatsByAsignatura({});
       }
       setStatsLoadingByAsignatura({});
-      setPageReady(true);
     };
 
     void loadStats();
@@ -221,8 +242,28 @@ export default function AsignaturasScreen({
     );
   };
 
-  if (loading || !pageReady) {
-    return <LoadingScreen message="Cargando asignaturas..." emoji="📖" />;
+  if (loading && !initialLoaded) {
+    return (
+      <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
+        <View className="relative mb-4 px-1">
+          <View className="relative">
+            <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
+            <View className="rounded-[30px] border-[4px] border-black bg-[#EBD7BF] px-5 py-3.5">
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={onBack}
+                className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
+              >
+                <Text className="text-xs font-black text-black">← Volver</Text>
+              </TouchableOpacity>
+              <Text className="mt-3 text-2xl font-black text-[#1E140D]">Asignaturas de {anio.nombre}</Text>
+            </View>
+          </View>
+        </View>
+        <View className="flex-1"></View>
+      </View>
+    );
   }
 
   return (

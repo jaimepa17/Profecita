@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
-import LoadingScreen from '@/components/LoadingScreen';
 import GrupoFormModal from '@/components/GrupoFormModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import { Anio } from '@/lib/services/aniosService';
 import { Asignatura } from '@/lib/services/asignaturasService';
@@ -16,6 +16,7 @@ type GruposScreenProps = {
   anio: Anio;
   asignatura: Asignatura;
   onBack: () => void;
+  onOpenParcialesConfig: (grupo: Grupo) => void;
 };
 
 const PaperGrid = () => (
@@ -38,6 +39,7 @@ export default function GruposScreen({
   carrera,
   anio,
   asignatura,
+  onOpenParcialesConfig,
   onBack,
 }: GruposScreenProps) {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -45,7 +47,6 @@ export default function GruposScreen({
   const [statsLoadingByGrupo, setStatsLoadingByGrupo] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
-  const [pageReady, setPageReady] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Grupo | null>(null);
   const { run: runCreate, isRunning: creating } = useSingleFlight();
@@ -68,12 +69,36 @@ export default function GruposScreen({
     }
 
     setGrupos(result.data);
+    await AsyncStorage.setItem(`grupos_${asignatura.id}_cache`, JSON.stringify(result.data));
     setLoading(false);
     setInitialLoaded(true);
   }, [asignatura.id, initialLoaded]);
 
   useEffect(() => {
-    void cargarGrupos();
+    let mounted = true;
+
+    const bootstrap = async () => {
+      // Cargar desde cache primero
+      try {
+        const cached = await AsyncStorage.getItem(`grupos_${asignatura.id}_cache`);
+        if (cached && mounted) {
+          setGrupos(JSON.parse(cached));
+          setInitialLoaded(true);
+          setLoading(false);
+        }
+      } catch (e) {
+        // Ignorar errores de cache
+      }
+
+      // Luego cargar desde API (background update)
+      await cargarGrupos();
+    };
+
+    void bootstrap();
+
+    return () => {
+      mounted = false;
+    };
   }, [cargarGrupos]);
 
   const crearNuevoGrupo = async (nombre: string, turno: string | null) => {
@@ -123,7 +148,6 @@ export default function GruposScreen({
       if (grupos.length === 0) {
         setStatsByGrupo({});
         setStatsLoadingByGrupo({});
-        setPageReady(true);
         return;
       }
 
@@ -145,7 +169,6 @@ export default function GruposScreen({
         setStatsByGrupo({});
       }
       setStatsLoadingByGrupo({});
-      setPageReady(true);
     };
 
     void loadStats();
@@ -188,7 +211,16 @@ export default function GruposScreen({
               )}
             </View>
 
-            <View className="mt-4 items-end">
+            <View className="mt-4 flex-row justify-end gap-2">
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => onOpenParcialesConfig(item)}
+                className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
+              >
+                <Text className="text-sm font-black text-black">Configurar notas</Text>
+              </TouchableOpacity>
+
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
@@ -207,8 +239,31 @@ export default function GruposScreen({
     );
   };
 
-  if (loading || !pageReady) {
-    return <LoadingScreen message="Cargando grupos..." emoji="👥" />;
+  if (loading && !initialLoaded) {
+    return (
+      <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
+        <View className="relative mb-4 px-1">
+          <View className="relative">
+            <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
+            <View className="rounded-[30px] border-[4px] border-black bg-[#EBD7BF] px-5 py-3.5">
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={onBack}
+                className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
+              >
+                <Text className="text-xs font-black text-black">← Volver</Text>
+              </TouchableOpacity>
+              <Text className="mt-3 text-2xl font-black text-[#1E140D]">Grupos de {asignatura.nombre}</Text>
+              <Text className="mt-1 text-sm font-semibold text-[#5E5045]">
+                {carrera.nombre} • {anio.nombre}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View className="flex-1"></View>
+      </View>
+    );
   }
 
   return (
