@@ -219,13 +219,6 @@ export default function Home({ userEmail }: HomeProps) {
         userEmail={userEmail}
       />
 
-      <View className="mb-4 flex-row items-end justify-between px-1">
-        <View className="relative flex-1 pr-3">
-          <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-full bg-black" />
-          <View className="h-14 rounded-full border-[3px] border-black bg-[#EFE7DC]" />
-        </View>
-      </View>
-
       <View className="relative flex-1">
         <View className="absolute inset-x-0 bottom-[-4px] h-[5px] rounded-full bg-black/90" />
         <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden">
@@ -252,7 +245,7 @@ export default function Home({ userEmail }: HomeProps) {
         </View>
       </View>
 
-      <View className="absolute bottom-7 right-6">
+      <View className="absolute bottom-7 left-6">
         <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-full bg-black" />
         <TouchableOpacity
           accessibilityRole="button"

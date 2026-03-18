@@ -9,7 +9,11 @@ module.exports = {
   presets: [require("nativewind/preset")],
   darkMode: "media",
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        fredoka: ['Fredoka_400Regular', 'Fredoka', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }
