@@ -1,4 +1,4 @@
-# Control Notas
+# Blog de Control de Notas
 
 <p align="center">
   <img src="https://img.shields.io/badge/Expo-55.0.6-000020?style=flat-square&logo=expo" alt="Expo">
