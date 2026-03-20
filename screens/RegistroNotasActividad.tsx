@@ -60,6 +60,7 @@ function normalizeNumberInput(raw: string): string {
 
 export default function RegistroNotasActividad({ onBack }: RegistroNotasActividadProps) {
   const isAndroid = Platform.OS === 'android';
+  const isWeb = Platform.OS === 'web';
 
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [anios, setAnios] = useState<Anio[]>([]);
@@ -372,6 +373,10 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
   }, []);
 
   const onStudentInputFocus = useCallback((estudianteId: string) => {
+    if (isWeb) {
+      return;
+    }
+
     if (typeof studentsSectionY === 'number') {
       outerScrollRef.current?.scrollTo({
         y: Math.max(0, studentsSectionY - 14),
@@ -392,7 +397,7 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
         animated: true,
       });
     }, 120);
-  }, [isAndroid, studentsSectionY]);
+  }, [isAndroid, isWeb, studentsSectionY]);
 
   const guardarTodos = async () => {
     if (!actividadSeleccionada) {
@@ -703,30 +708,34 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
                       </View>
                     )}
 
-                    {estudiantesGrupo.map((item) => {
-                      const notaExistente = notasByStudentId.get(item.id);
+                    <View className={isWeb ? 'flex-row flex-wrap -mx-1.5' : ''}>
+                      {estudiantesGrupo.map((item) => {
+                        const notaExistente = notasByStudentId.get(item.id);
 
-                      return (
-                        <View
-                          key={item.id}
-                          onLayout={(event) => {
-                            studentYByIdRef.current[item.id] = event.nativeEvent.layout.y;
-                          }}
-                        >
-                          <EstudianteNotaCard
-                            estudiante={item}
-                            notaExistente={notaExistente}
-                            actividadId={actividadSeleccionada.id}
-                            maxPuntaje={maxPuntajeActividad}
-                            initialInputValue={inputsByStudentId[item.id] ?? ''}
-                            onInputChange={onInputChange}
-                            onInputFocus={onStudentInputFocus}
-                            onNotaSaved={onNotaSaved}
-                            onFeedback={showFeedback}
-                          />
-                        </View>
-                      );
-                    })}
+                        return (
+                          <View
+                            key={item.id}
+                            className={isWeb ? 'mb-3 px-1.5' : 'mb-3'}
+                            style={isWeb ? { width: '33.333%' } : { width: '100%' }}
+                            onLayout={(event) => {
+                              studentYByIdRef.current[item.id] = event.nativeEvent.layout.y;
+                            }}
+                          >
+                            <EstudianteNotaCard
+                              estudiante={item}
+                              notaExistente={notaExistente}
+                              actividadId={actividadSeleccionada.id}
+                              maxPuntaje={maxPuntajeActividad}
+                              initialInputValue={inputsByStudentId[item.id] ?? ''}
+                              onInputChange={onInputChange}
+                              onInputFocus={isWeb ? undefined : onStudentInputFocus}
+                              onNotaSaved={onNotaSaved}
+                              onFeedback={showFeedback}
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
                   </ScrollView>
                 </View>
               ) : actividadSeleccionada ? (
