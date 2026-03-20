@@ -198,7 +198,7 @@ export default function Auth() {
               </View>
 
               <Text className="text-[32px] font-black tracking-tighter text-[#1E140D] mt-2 text">
-               Bievenido a Profecita 
+               Bienvenido a Profecita 
               </Text>
               <Text className="mt-1 text-lg font-bold text-[#5E5045]">{title}</Text>
               <Text className="mt-1 mb-6 text-sm leading-5 font-semibold text-[#8A7968]">
