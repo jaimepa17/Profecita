@@ -4,7 +4,7 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
-import RootNavigator from './navigation/RootNavigator';
+import RootNavigatorStack from './navigation/RootNavigatorStack';
 import {
   useFonts,
   Fredoka_400Regular,
@@ -62,7 +62,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <RootNavigator session={session} />
+      <RootNavigatorStack session={session} />
     </NavigationContainer>
   );
 }
