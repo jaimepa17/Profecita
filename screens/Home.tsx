@@ -147,16 +147,21 @@ export default function Home() {
 
   const cerrarSesion = async () => {
     try {
+      console.log('[CERRAR SESION] Iniciando cierre de sesión...');
       const { error } = await supabase.auth.signOut();
+      console.log('[CERRAR SESION] Resultado de signOut:', { error: error?.message ?? 'sin error' });
+      
       if (error) {
         Alert.alert('No se pudo cerrar sesión', error.message);
       } else {
+        console.log('[CERRAR SESION] Navegando a Auth...');
         navigation.reset({
           index: 0,
           routes: [{ name: 'Auth' }],
         });
       }
     } catch (err) {
+      console.log('[CERRAR SESION] Error inesperado:', err);
       Alert.alert('Error', 'Ocurrió un error al cerrar sesión');
     }
   };
