@@ -150,6 +150,11 @@ export default function Home() {
       const { error } = await supabase.auth.signOut();
       if (error) {
         Alert.alert('No se pudo cerrar sesión', error.message);
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
       }
     } catch (err) {
       Alert.alert('Error', 'Ocurrió un error al cerrar sesión');
@@ -210,17 +215,8 @@ export default function Home() {
 
     void bootstrap();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) {
-        return;
-      }
-      setRealtimeUserId(session?.user?.id ?? null);
-      setUserEmail(session?.user?.email ?? undefined);
-    });
-
     return () => {
       mounted = false;
-      authListener.subscription.unsubscribe();
     };
   }, [cargarCarreras]);
 
