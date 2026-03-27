@@ -7,6 +7,7 @@ import AuthScreen from '@/screens/Auth';
 import HomeScreen from '@/screens/Home';
 import EstudiantesScreen from '@/screens/Estudiantes';
 import RegistroNotasActividadScreen from '@/screens/RegistroNotasActividad';
+import ReportesScreen from '@/screens/Reportes';
 import AniosScreen from '@/screens/Anios';
 import AsignaturasScreen from '@/screens/Asignaturas';
 import GruposScreen from '@/screens/Grupos';
@@ -79,6 +80,13 @@ export default function RootNavigatorStack({ session }: RootNavigatorProps) {
         component={RegistroNotasActividadScreen}
         options={{
           title: 'Registro de Notas',
+        }}
+      />
+      <Stack.Screen
+        name="Reportes"
+        component={ReportesScreen}
+        options={{
+          title: 'Reportes',
         }}
       />
       <Stack.Screen

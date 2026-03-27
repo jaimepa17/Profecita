@@ -462,6 +462,18 @@ export default function Home() {
               >
                 <Text className="text-sm font-black text-black">Registrar notas por actividad</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => {
+                  setQuickActionsVisible(false);
+                  navigation.navigate('Reportes');
+                }}
+                className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-3"
+              >
+                <Text className="text-sm font-black text-black">Ver reportes de notas</Text>
+              </TouchableOpacity>
             </Pressable>
           </View>
         </Pressable>

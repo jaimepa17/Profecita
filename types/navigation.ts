@@ -9,6 +9,7 @@ export type RootStackParamList = {
   Home: undefined;
   Estudiantes: undefined;
   RegistroNotasActividad: undefined;
+  Reportes: undefined;
   Anios: { carrera: Carrera };
   Asignaturas: { carrera: Carrera; anio: Anio };
   Grupos: { carrera: Carrera; anio: Anio; asignatura: Asignatura };
