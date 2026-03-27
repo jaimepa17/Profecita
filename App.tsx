@@ -1,6 +1,6 @@
 import './global.css';
-import { useEffect, useState } from 'react';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Text, View, ActivityIndicator } from 'react-native';
 import { Session } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './lib/supabase';
@@ -98,6 +98,8 @@ function isValidRoute(value: unknown): value is AppRoute {
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [route, setRoute] = useState<AppRoute>({ name: 'home' });
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const prevRouteRef = useRef<AppRoute>(route);
   const [routeHydrated, setRouteHydrated] = useState(false);
   const [fontsLoaded] = useFonts({
     Fredoka_400Regular,
@@ -198,6 +200,28 @@ export default function App() {
     void AsyncStorage.setItem(getRouteStorageKey(userId), JSON.stringify(route));
   }, [route, routeHydrated, session?.user?.id]);
 
+  useEffect(() => {
+    const prevName = prevRouteRef.current.name;
+    const currentName = route.name;
+
+    if (prevName !== currentName) {
+      prevRouteRef.current = route;
+
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 80,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [route.name, fadeAnim]);
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#C5A07D' }}>
@@ -207,7 +231,11 @@ export default function App() {
   }
 
   if (!session && session !== undefined) {
-    return <Auth />;
+    return (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <Auth />
+      </Animated.View>
+    );
   }
 
   if (session && !routeHydrated) {
@@ -220,98 +248,116 @@ export default function App() {
 
   if (route.name === 'anios') {
     return (
-      <AniosScreen
-        carrera={route.carrera}
-        onBack={() => setRoute({ name: 'home' })}
-        onOpenAsignaturas={(anio) =>
-          setRoute({
-            name: 'asignaturas',
-            carrera: route.carrera,
-            anio,
-          })
-        }
-      />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <AniosScreen
+          carrera={route.carrera}
+          onBack={() => setRoute({ name: 'home' })}
+          onOpenAsignaturas={(anio) =>
+            setRoute({
+              name: 'asignaturas',
+              carrera: route.carrera,
+              anio,
+            })
+          }
+        />
+      </Animated.View>
     );
   }
 
   if (route.name === 'asignaturas') {
     return (
-      <AsignaturasScreen
-        carrera={route.carrera}
-        anio={route.anio}
-        onBack={() => setRoute({ name: 'anios', carrera: route.carrera })}
-        onOpenGrupos={(asignatura) =>
-          setRoute({
-            name: 'grupos',
-            carrera: route.carrera,
-            anio: route.anio,
-            asignatura,
-          })
-        }
-      />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <AsignaturasScreen
+          carrera={route.carrera}
+          anio={route.anio}
+          onBack={() => setRoute({ name: 'anios', carrera: route.carrera })}
+          onOpenGrupos={(asignatura) =>
+            setRoute({
+              name: 'grupos',
+              carrera: route.carrera,
+              anio: route.anio,
+              asignatura,
+            })
+          }
+        />
+      </Animated.View>
     );
   }
 
   if (route.name === 'grupos') {
     return (
-      <GruposScreen
-        carrera={route.carrera}
-        anio={route.anio}
-        asignatura={route.asignatura}
-        onOpenParcialesConfig={(grupo) =>
-          setRoute({
-            name: 'parciales-config',
-            carrera: route.carrera,
-            anio: route.anio,
-            asignatura: route.asignatura,
-            grupo,
-          })
-        }
-        onBack={() =>
-          setRoute({
-            name: 'asignaturas',
-            carrera: route.carrera,
-            anio: route.anio,
-          })
-        }
-      />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <GruposScreen
+          carrera={route.carrera}
+          anio={route.anio}
+          asignatura={route.asignatura}
+          onOpenParcialesConfig={(grupo) =>
+            setRoute({
+              name: 'parciales-config',
+              carrera: route.carrera,
+              anio: route.anio,
+              asignatura: route.asignatura,
+              grupo,
+            })
+          }
+          onBack={() =>
+            setRoute({
+              name: 'asignaturas',
+              carrera: route.carrera,
+              anio: route.anio,
+            })
+          }
+        />
+      </Animated.View>
     );
   }
 
   // Pantalla de configuración de parciales y actividades del grupo seleccionado
   if (route.name === 'parciales-config') {
     return (
-      <ParcialesConfigScreen
-        carrera={route.carrera}
-        anio={route.anio}
-        asignatura={route.asignatura}
-        grupo={route.grupo}
-        onBack={() =>
-          setRoute({
-            name: 'grupos',
-            carrera: route.carrera,
-            anio: route.anio,
-            asignatura: route.asignatura,
-          })
-        }
-      />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ParcialesConfigScreen
+          carrera={route.carrera}
+          anio={route.anio}
+          asignatura={route.asignatura}
+          grupo={route.grupo}
+          onBack={() =>
+            setRoute({
+              name: 'grupos',
+              carrera: route.carrera,
+              anio: route.anio,
+              asignatura: route.asignatura,
+            })
+          }
+        />
+      </Animated.View>
     );
   }
 
   if (route.name === 'estudiantes') {
-    return <EstudiantesScreen onBack={() => setRoute({ name: 'home' })} />;
+    return (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <EstudiantesScreen onBack={() => setRoute({ name: 'home' })} />
+      </Animated.View>
+    );
   }
 
   if (route.name === 'registro-notas-actividad') {
-    return <RegistroNotasActividadScreen onBack={() => setRoute({ name: 'home' })} />;
+    return (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <RegistroNotasActividadScreen onBack={() => setRoute({ name: 'home' })} />
+      </Animated.View>
+    );
   }
 
   return (
-    <Home
-      userEmail={session?.user?.email}
-      onOpenStudents={() => setRoute({ name: 'estudiantes' })}
-      onOpenRegistroNotasActividad={() => setRoute({ name: 'registro-notas-actividad' })}
-      onOpenCarrera={(carrera) => setRoute({ name: 'anios', carrera })}
-    />
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <Home
+        userEmail={session?.user?.email}
+        onOpenStudents={() => setRoute({ name: 'estudiantes' })}
+        onOpenRegistroNotasActividad={() => setRoute({ name: 'registro-notas-actividad' })}
+        onOpenCarrera={(carrera) => setRoute({ name: 'anios', carrera })}
+      />
+    </Animated.View>
   );
 }
