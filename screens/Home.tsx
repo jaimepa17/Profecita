@@ -151,7 +151,7 @@ export default function Home() {
       setAccountPanelVisible(false);
       
       // Esperar a que la animación del modal se complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 50));
       
       console.log('[CERRAR SESION] Iniciando cierre de sesión...');
       const { error } = await supabase.auth.signOut();
