@@ -278,6 +278,7 @@ export default function App() {
     );
   }
 
+  // Pantalla de configuración de parciales y actividades del grupo seleccionado
   if (route.name === 'parciales-config') {
     return (
       <ParcialesConfigScreen

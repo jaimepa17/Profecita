@@ -7,8 +7,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { BREAKPOINTS } from '@/lib/constants/breakpoints';
 import { listCarreras, type Carrera } from '@/lib/services/carrerasService';
 import { listAnios, type Anio } from '@/lib/services/aniosService';
 import { listAsignaturas, type Asignatura } from '@/lib/services/asignaturasService';
@@ -61,6 +63,14 @@ function normalizeNumberInput(raw: string): string {
 export default function RegistroNotasActividad({ onBack }: RegistroNotasActividadProps) {
   const isAndroid = Platform.OS === 'android';
   const isWeb = Platform.OS === 'web';
+  const { width: windowWidth } = useWindowDimensions();
+
+  const columnsCount = useMemo(() => {
+    if (!isWeb) return 1;
+    if (windowWidth < BREAKPOINTS.mobile) return 1;
+    if (windowWidth < BREAKPOINTS.tablet) return 2;
+    return 3;
+  }, [isWeb, windowWidth]);
 
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [anios, setAnios] = useState<Anio[]>([]);
@@ -658,7 +668,7 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
                     showsVerticalScrollIndicator
                     keyboardShouldPersistTaps="handled"
                     stickyHeaderIndices={[0]}
-                    style={{ maxHeight: keyboardHeight > 0 ? 360 : 520 }}
+                    style={{ maxHeight: keyboardHeight > 0 ? 360 : columnsCount === 1 ? 420 : 520 }}
                     contentContainerStyle={{
                       paddingHorizontal: 10,
                       paddingTop: 0,
@@ -666,7 +676,7 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
                       gap: 10,
                     }}
                   >
-                    {isAndroid ? (
+                    {isAndroid || columnsCount === 1 ? (
                       <View className="mx-[-10px] border-b-[3px] border-black bg-[#FFF7E8] px-3 py-2">
                         <Text className="text-sm font-black text-[#1E140D]">
                           Estudiantes del grupo ({estudiantesGrupo.length})
@@ -716,7 +726,7 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
                           <View
                             key={item.id}
                             className={isWeb ? 'mb-3 px-1.5' : 'mb-3'}
-                            style={isWeb ? { width: '33.333%' } : { width: '100%' }}
+                            style={isWeb ? { width: `${100 / columnsCount}%` } : { width: '100%' }}
                             onLayout={(event) => {
                               studentYByIdRef.current[item.id] = event.nativeEvent.layout.y;
                             }}
