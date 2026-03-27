@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
 import ActividadFormModal from '@/components/ActividadFormModal';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
@@ -29,13 +33,8 @@ import {
 } from '@/lib/services/parcialesService';
 import { type Grupo } from '@/lib/services/gruposService';
 
-type ParcialesConfigScreenProps = {
-  carrera: Carrera;
-  anio: Anio;
-  asignatura: Asignatura;
-  grupo: Grupo;
-  onBack: () => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ParcialesConfig'>;
+type RouteProps = RouteProp<RootStackParamList, 'ParcialesConfig'>;
 
 type PendingDelete =
   | { kind: 'parcial'; parcial: Parcial }
@@ -65,13 +64,10 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function ParcialesConfigScreen({
-  carrera,
-  anio,
-  asignatura,
-  grupo,
-  onBack,
-}: ParcialesConfigScreenProps) {
+export default function ParcialesConfigScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const { carrera, anio, asignatura, grupo } = route.params;
   const [resumenParcialById, setResumenParcialById] = useState<
     Record<string, { bloques: number; actividades: number }>
   >({});
@@ -730,7 +726,7 @@ export default function ParcialesConfigScreen({
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

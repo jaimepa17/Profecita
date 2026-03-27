@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,12 +19,8 @@ import { Anio } from '@/lib/services/aniosService';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 
-type AsignaturasScreenProps = {
-  carrera: Carrera;
-  anio: Anio;
-  onBack: () => void;
-  onOpenGrupos: (asignatura: Asignatura) => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Asignaturas'>;
+type RouteProps = RouteProp<RootStackParamList, 'Asignaturas'>;
 
 const PaperGrid = () => (
   <View className="absolute inset-0 overflow-hidden rounded-[34px] pointer-events-none">
@@ -38,12 +38,10 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function AsignaturasScreen({
-  carrera,
-  anio,
-  onBack,
-  onOpenGrupos,
-}: AsignaturasScreenProps) {
+export default function AsignaturasScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const { carrera, anio } = route.params;
   const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
   const [statsByAsignatura, setStatsByAsignatura] = useState<Record<string, AsignaturaStats>>({});
   const [statsLoadingByAsignatura, setStatsLoadingByAsignatura] = useState<Record<string, boolean>>({});
@@ -231,7 +229,7 @@ export default function AsignaturasScreen({
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={() => onOpenGrupos(item)}
+                onPress={() => navigation.navigate('Grupos', { carrera, anio, asignatura: item })}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
                 <Text className="text-sm font-black text-black">Ver grupos</Text>
@@ -265,7 +263,7 @@ export default function AsignaturasScreen({
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={onBack}
+                onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <Text className="text-xs font-black text-black">← Volver</Text>
@@ -327,7 +325,7 @@ export default function AsignaturasScreen({
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

@@ -10,6 +10,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/types/navigation';
 import { BREAKPOINTS } from '@/lib/constants/breakpoints';
 import { listCarreras, type Carrera } from '@/lib/services/carrerasService';
 import { listAnios, type Anio } from '@/lib/services/aniosService';
@@ -24,9 +27,7 @@ import { listNotasByActividad, createNota, updateNota, type Nota } from '@/lib/s
 import EstudianteNotaCard from '@/components/EstudianteNotaCard';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
 
-type RegistroNotasActividadProps = {
-  onBack: () => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RegistroNotasActividad'>;
 
 type ItemChip = {
   id: string;
@@ -60,7 +61,8 @@ function normalizeNumberInput(raw: string): string {
   return raw.replace(/[^0-9.,]/g, '');
 }
 
-export default function RegistroNotasActividad({ onBack }: RegistroNotasActividadProps) {
+export default function RegistroNotasActividad() {
+  const navigation = useNavigation<NavigationProp>();
   const isAndroid = Platform.OS === 'android';
   const isWeb = Platform.OS === 'web';
   const { width: windowWidth } = useWindowDimensions();
@@ -554,7 +556,7 @@ export default function RegistroNotasActividad({ onBack }: RegistroNotasActivida
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

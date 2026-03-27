@@ -6,11 +6,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/types/navigation';
 import { signInWithEmail, signUpWithEmail } from '@/lib/authLogic';
 import NotificationBar from '@/components/NotificationBar';
 import PrivacyPolicyCard from '@/components/PrivacyPolicyCard';
 import { checkSupabaseAuthHealth } from '@/lib/serviceMonitor';
 import { useSingleFlight } from '@/lib/hooks/useSingleFlight';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Auth'>;
 
 type NotificationType = 'success' | 'warning' | 'error';
 
@@ -37,6 +42,7 @@ const PaperGrid = () => (
 );
 
 export default function Auth() {
+  const navigation = useNavigation<NavigationProp>();
   const [screen, setScreen] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -116,6 +122,11 @@ export default function Auth() {
           `${result.message ?? 'No se pudo iniciar sesión.'}${debugPart}`,
           7000
         );
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
       }
     });
   };

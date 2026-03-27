@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import AlertModal, {
   type AlertModalPayload,
@@ -32,9 +35,7 @@ import {
   listGrupoEstudiantesByEstudiantes,
 } from '@/lib/services/grupoEstudiantesService';
 
-type EstudiantesScreenProps = {
-  onBack: () => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Estudiantes'>;
 
 type GrupoLookup = {
   grupo: Grupo;
@@ -59,7 +60,8 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function EstudiantesScreen({ onBack }: EstudiantesScreenProps) {
+export default function EstudiantesScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const [estudiantes, setEstudiantes] = useState<Estudiante[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoaded, setInitialLoaded] = useState(false);
@@ -524,7 +526,7 @@ export default function EstudiantesScreen({ onBack }: EstudiantesScreenProps) {
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={onBack}
+                onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <Text className="text-xs font-black text-black">← Volver</Text>
@@ -605,7 +607,7 @@ export default function EstudiantesScreen({ onBack }: EstudiantesScreenProps) {
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

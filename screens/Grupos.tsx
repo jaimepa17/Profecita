@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import GrupoFormModal from '@/components/GrupoFormModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,13 +15,8 @@ import { getGruposStatsByIds, type GrupoStats } from '@/lib/services/statsServic
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 
-type GruposScreenProps = {
-  carrera: Carrera;
-  anio: Anio;
-  asignatura: Asignatura;
-  onBack: () => void;
-  onOpenParcialesConfig: (grupo: Grupo) => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Grupos'>;
+type RouteProps = RouteProp<RootStackParamList, 'Grupos'>;
 
 const PaperGrid = () => (
   <View className="absolute inset-0 overflow-hidden rounded-[34px] pointer-events-none">
@@ -35,13 +34,10 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function GruposScreen({
-  carrera,
-  anio,
-  asignatura,
-  onOpenParcialesConfig,
-  onBack,
-}: GruposScreenProps) {
+export default function GruposScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const { carrera, anio, asignatura } = route.params;
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [statsByGrupo, setStatsByGrupo] = useState<Record<string, GrupoStats>>({});
   const [statsLoadingByGrupo, setStatsLoadingByGrupo] = useState<Record<string, boolean>>({});
@@ -233,7 +229,7 @@ export default function GruposScreen({
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={() => onOpenParcialesConfig(item)}
+                onPress={() => navigation.navigate('ParcialesConfig', { carrera, anio, asignatura, grupo: item })}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
                 <Text className="text-sm font-black text-black">Configurar notas</Text>
@@ -267,7 +263,7 @@ export default function GruposScreen({
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={onBack}
+                onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <Text className="text-xs font-black text-black">← Volver</Text>
@@ -326,7 +322,7 @@ export default function GruposScreen({
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

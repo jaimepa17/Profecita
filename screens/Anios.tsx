@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,11 +13,8 @@ import { getAniosStatsByIds, type AnioStats } from '@/lib/services/statsService'
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 
-type AniosScreenProps = {
-  carrera: Carrera;
-  onBack: () => void;
-  onOpenAsignaturas: (anio: Anio) => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Anios'>;
+type RouteProps = RouteProp<RootStackParamList, 'Anios'>;
 
 const PaperGrid = () => (
   <View className="absolute inset-0 overflow-hidden rounded-[34px] pointer-events-none">
@@ -31,7 +32,10 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function AniosScreen({ carrera, onBack, onOpenAsignaturas }: AniosScreenProps) {
+export default function AniosScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<RouteProps>();
+  const { carrera } = route.params;
   const [anios, setAnios] = useState<Anio[]>([]);
   const [statsByAnio, setStatsByAnio] = useState<Record<string, AnioStats>>({});
   const [statsLoadingByAnio, setStatsLoadingByAnio] = useState<Record<string, boolean>>({});
@@ -217,7 +221,7 @@ export default function AniosScreen({ carrera, onBack, onOpenAsignaturas }: Anio
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={() => onOpenAsignaturas(item)}
+                onPress={() => navigation.navigate('Asignaturas', { carrera, anio: item })}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
                 <Text className="text-sm font-black text-black">Ver asignaturas</Text>
@@ -251,7 +255,7 @@ export default function AniosScreen({ carrera, onBack, onOpenAsignaturas }: Anio
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={onBack}
+                onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <Text className="text-xs font-black text-black">← Volver</Text>
@@ -313,7 +317,7 @@ export default function AniosScreen({ carrera, onBack, onOpenAsignaturas }: Anio
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={onBack}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <Text className="text-xs font-black text-black">← Volver</Text>

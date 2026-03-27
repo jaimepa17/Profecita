@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '@/types/navigation';
 import AccountPanel from '../components/AccountPanel';
 import CarreraFormModal from '../components/CarreraFormModal';
 import ConfirmActionModal from '../components/ConfirmActionModal';
@@ -24,13 +27,7 @@ import { useRealtimeCollection } from '@/lib/realtime';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 
 type Carrera = CarreraModel;
-
-type HomeProps = {
-  userEmail?: string;
-  onOpenStudents: () => void;
-  onOpenRegistroNotasActividad: () => void;
-  onOpenCarrera: (carrera: Carrera) => void;
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 const PaperGrid = () => (
   <View
@@ -51,12 +48,8 @@ const PaperGrid = () => (
   </View>
 );
 
-export default function Home({
-  userEmail,
-  onOpenStudents,
-  onOpenRegistroNotasActividad,
-  onOpenCarrera,
-}: HomeProps) {
+export default function Home() {
+  const navigation = useNavigation<NavigationProp>();
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [statsByCarrera, setStatsByCarrera] = useState<Record<string, CarreraStats>>({});
   const [statsLoadingByCarrera, setStatsLoadingByCarrera] = useState<Record<string, boolean>>({});
@@ -67,6 +60,7 @@ export default function Home({
   const [quickActionsVisible, setQuickActionsVisible] = useState(false);
   const [pendingDeleteCarrera, setPendingDeleteCarrera] = useState<Carrera | null>(null);
   const [realtimeUserId, setRealtimeUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const { run: runCreateCarrera, isRunning: creatingCarrera } = useSingleFlight();
   const { run: runSignOut, isRunning: signingOut } = useSingleFlight();
   const { run: runDeleteCarrera, isRunning: isDeletingCarrera } =
@@ -156,6 +150,11 @@ export default function Home({
       const { error } = await supabase.auth.signOut();
       if (error) {
         Alert.alert('No se pudo cerrar sesión', error.message);
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Auth' }],
+        });
       }
     });
   };
@@ -209,6 +208,7 @@ export default function Home({
       }
 
       setRealtimeUserId(data.session?.user?.id ?? null);
+      setUserEmail(data.session?.user?.email ?? undefined);
     };
 
     void bootstrap();
@@ -218,6 +218,7 @@ export default function Home({
         return;
       }
       setRealtimeUserId(session?.user?.id ?? null);
+      setUserEmail(session?.user?.email ?? undefined);
     });
 
     return () => {
@@ -335,7 +336,7 @@ export default function Home({
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={() => onOpenCarrera(item)}
+                onPress={() => navigation.navigate('Anios', { carrera: item })}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
                 <Text className="text-sm font-black text-black">Ver años</Text>
@@ -443,7 +444,7 @@ export default function Home({
                 activeOpacity={0.9}
                 onPress={() => {
                   setQuickActionsVisible(false);
-                  onOpenStudents();
+                  navigation.navigate('Estudiantes');
                 }}
                 className="mt-3 rounded-2xl border-[3px] border-black bg-[#D7ECFF] px-4 py-3"
               >
@@ -455,7 +456,7 @@ export default function Home({
                 activeOpacity={0.9}
                 onPress={() => {
                   setQuickActionsVisible(false);
-                  onOpenRegistroNotasActividad();
+                  navigation.navigate('RegistroNotasActividad');
                 }}
                 className="mt-3 rounded-2xl border-[3px] border-black bg-[#BDE9C7] px-4 py-3"
               >
