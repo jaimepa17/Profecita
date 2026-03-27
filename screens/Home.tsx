@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/types/navigation';
 import AccountPanel from '../components/AccountPanel';
@@ -154,11 +154,13 @@ export default function Home() {
       if (error) {
         Alert.alert('No se pudo cerrar sesión', error.message);
       } else {
-        console.log('[CERRAR SESION] Navegando a Auth...');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Auth' }],
-        });
+        console.log('[CERRAR SESION] Navegando a Auth con CommonActions...');
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          })
+        );
       }
     } catch (err) {
       console.log('[CERRAR SESION] Error inesperado:', err);
