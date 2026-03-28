@@ -9,7 +9,7 @@ export type GrupoEstudiante = {
 export type CreateGrupoEstudianteInput = GrupoEstudiante;
 
 export async function listGrupoEstudiantes(): Promise<ServiceResult<GrupoEstudiante[]>> {
-  const { data, error } = await supabase.from('grupo_estudiantes').select('*');
+  const { data, error } = await supabase.from('grupo_estudiantes').select('grupo_id, estudiante_id');
 
   if (error) {
     return fail('No se pudieron cargar las matrículas de grupo.', error.message);
@@ -27,7 +27,7 @@ export async function listGrupoEstudiantesByGrupo(
 
   const { data, error } = await supabase
     .from('grupo_estudiantes')
-    .select('*')
+    .select('grupo_id, estudiante_id')
     .eq('grupo_id', grupoId);
 
   if (error) {
@@ -46,7 +46,7 @@ export async function listGrupoEstudiantesByEstudiante(
 
   const { data, error } = await supabase
     .from('grupo_estudiantes')
-    .select('*')
+    .select('grupo_id, estudiante_id')
     .eq('estudiante_id', estudianteId);
 
   if (error) {
@@ -66,7 +66,7 @@ export async function listGrupoEstudiantesByEstudiantes(
 
   const { data, error } = await supabase
     .from('grupo_estudiantes')
-    .select('*')
+    .select('grupo_id, estudiante_id')
     .in('estudiante_id', ids);
 
   if (error) {
@@ -91,7 +91,7 @@ export async function createGrupoEstudiante(
   const { data, error } = await supabase
     .from('grupo_estudiantes')
     .insert(payload)
-    .select('*')
+    .select('grupo_id, estudiante_id')
     .single();
 
   if (error) {

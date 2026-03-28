@@ -31,7 +31,7 @@ function validateNombre(nombre?: string): string | null {
 export async function listAnios(): Promise<ServiceResult<Anio[]>> {
   const { data, error } = await supabase
     .from('anios')
-    .select('*')
+    .select('id, carrera_id, nombre, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -48,7 +48,7 @@ export async function listAniosByCarrera(carreraId: string): Promise<ServiceResu
 
   const { data, error } = await supabase
     .from('anios')
-    .select('*')
+    .select('id, carrera_id, nombre, created_at')
     .eq('carrera_id', carreraId)
     .order('created_at', { ascending: false });
 
@@ -66,7 +66,7 @@ export async function getAnioById(id: string): Promise<ServiceResult<Anio | null
 
   const { data, error } = await supabase
     .from('anios')
-    .select('*')
+    .select('id, carrera_id, nombre, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -95,7 +95,7 @@ export async function createAnio(input: CreateAnioInput): Promise<ServiceResult<
   const { data, error } = await supabase
     .from('anios')
     .insert(payload)
-    .select('*')
+    .select('id, carrera_id, nombre, created_at')
     .single();
 
   if (error) {
@@ -131,7 +131,7 @@ export async function updateAnio(
     .from('anios')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, carrera_id, nombre, created_at')
     .single();
 
   if (error) {

@@ -42,7 +42,7 @@ function normalizeTurno(turno?: string | null): string | null {
 export async function listGrupos(): Promise<ServiceResult<Grupo[]>> {
   const { data, error } = await supabase
     .from('grupos')
-    .select('*')
+    .select('id, asignatura_id, nombre, turno, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -61,7 +61,7 @@ export async function listGruposByAsignatura(
 
   const { data, error } = await supabase
     .from('grupos')
-    .select('*')
+    .select('id, asignatura_id, nombre, turno, created_at')
     .eq('asignatura_id', asignaturaId)
     .order('created_at', { ascending: false });
 
@@ -79,7 +79,7 @@ export async function getGrupoById(id: string): Promise<ServiceResult<Grupo | nu
 
   const { data, error } = await supabase
     .from('grupos')
-    .select('*')
+    .select('id, asignatura_id, nombre, turno, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -109,7 +109,7 @@ export async function createGrupo(input: CreateGrupoInput): Promise<ServiceResul
   const { data, error } = await supabase
     .from('grupos')
     .insert(payload)
-    .select('*')
+    .select('id, asignatura_id, nombre, turno, created_at')
     .single();
 
   if (error) {
@@ -149,7 +149,7 @@ export async function updateGrupo(
     .from('grupos')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, asignatura_id, nombre, turno, created_at')
     .single();
 
   if (error) {

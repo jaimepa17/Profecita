@@ -88,7 +88,7 @@ async function validateParcialBloqueRules(
 export async function listBloques(): Promise<ServiceResult<Bloque[]>> {
   const { data, error } = await supabase
     .from('bloques')
-    .select('*')
+    .select('id, parcial_id, nombre, peso_porcentaje, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -107,7 +107,7 @@ export async function listBloquesByParcial(
 
   const { data, error } = await supabase
     .from('bloques')
-    .select('*')
+    .select('id, parcial_id, nombre, peso_porcentaje, created_at')
     .eq('parcial_id', parcialId)
     .order('created_at', { ascending: false });
 
@@ -125,7 +125,7 @@ export async function getBloqueById(id: string): Promise<ServiceResult<Bloque | 
 
   const { data, error } = await supabase
     .from('bloques')
-    .select('*')
+    .select('id, parcial_id, nombre, peso_porcentaje, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -168,7 +168,7 @@ export async function createBloque(
       nombre: input.nombre.trim(),
       peso_porcentaje: nextPeso,
     })
-    .select()
+    .select('id, parcial_id, nombre, peso_porcentaje, created_at')
     .single();
 
   if (error) {
@@ -235,7 +235,7 @@ export async function updateBloque(
     .from('bloques')
     .update(updateData)
     .eq('id', id)
-    .select()
+    .select('id, parcial_id, nombre, peso_porcentaje, created_at')
     .single();
 
   if (error) {

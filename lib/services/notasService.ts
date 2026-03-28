@@ -72,7 +72,7 @@ function normalizeObservaciones(observaciones?: string | null): string | null {
 export async function listNotas(): Promise<ServiceResult<Nota[]>> {
   const { data, error } = await supabase
     .from('notas')
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -91,7 +91,7 @@ export async function listNotasByActividad(
 
   const { data, error } = await supabase
     .from('notas')
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .eq('actividad_id', actividadId)
     .order('created_at', { ascending: false });
 
@@ -111,7 +111,7 @@ export async function listNotasByEstudiante(
 
   const { data, error } = await supabase
     .from('notas')
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .eq('estudiante_id', estudianteId)
     .order('created_at', { ascending: false });
 
@@ -129,7 +129,7 @@ export async function getNotaById(id: string): Promise<ServiceResult<Nota | null
 
   const { data, error } = await supabase
     .from('notas')
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -169,7 +169,7 @@ export async function createNota(input: CreateNotaInput): Promise<ServiceResult<
   const { data, error } = await supabase
     .from('notas')
     .insert(payload)
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .single();
 
   if (error) {
@@ -235,7 +235,7 @@ export async function updateNota(
     .from('notas')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, actividad_id, estudiante_id, puntaje_obtenido, observaciones, created_at')
     .single();
 
   if (error) {

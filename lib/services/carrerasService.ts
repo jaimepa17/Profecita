@@ -31,7 +31,7 @@ function validateNombre(nombre?: string): string | null {
 export async function listCarreras(): Promise<ServiceResult<Carrera[]>> {
   const { data, error } = await supabase
     .from('carreras')
-    .select('*')
+    .select('id, profesor_id, nombre, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -44,7 +44,7 @@ export async function listCarreras(): Promise<ServiceResult<Carrera[]>> {
 export async function getCarreraById(id: string): Promise<ServiceResult<Carrera | null>> {
   const { data, error } = await supabase
     .from('carreras')
-    .select('*')
+    .select('id, profesor_id, nombre, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -76,7 +76,7 @@ export async function createCarrera(
   const { data, error } = await supabase
     .from('carreras')
     .insert(payload)
-    .select('*')
+    .select('id, profesor_id, nombre, created_at')
     .single();
 
   if (error) {
@@ -112,7 +112,7 @@ export async function updateCarrera(
     .from('carreras')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, profesor_id, nombre, created_at')
     .single();
 
   if (error) {

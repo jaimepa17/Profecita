@@ -132,7 +132,7 @@ async function validateBloqueActivityRules(
 export async function listActividades(): Promise<ServiceResult<Actividad[]>> {
   const { data, error } = await supabase
     .from('actividades')
-    .select('*')
+    .select('id, bloque_id, nombre, tipo, puntaje_maximo, peso_porcentaje, fecha_asignada, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -151,7 +151,7 @@ export async function listActividadesByBloque(
 
   const { data, error } = await supabase
     .from('actividades')
-    .select('*')
+    .select('id, bloque_id, nombre, tipo, puntaje_maximo, peso_porcentaje, fecha_asignada, created_at')
     .eq('bloque_id', bloqueId)
     .order('created_at', { ascending: false });
 
@@ -171,7 +171,7 @@ export async function getActividadById(
 
   const { data, error } = await supabase
     .from('actividades')
-    .select('*')
+    .select('id, bloque_id, nombre, tipo, puntaje_maximo, peso_porcentaje, fecha_asignada, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -230,7 +230,7 @@ export async function createActividad(
   const { data, error } = await supabase
     .from('actividades')
     .insert(payload)
-    .select('*')
+    .select('id, bloque_id, nombre, tipo, puntaje_maximo, peso_porcentaje, fecha_asignada, created_at')
     .single();
 
   if (error) {
@@ -316,7 +316,7 @@ export async function updateActividad(
     .from('actividades')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, bloque_id, nombre, tipo, puntaje_maximo, peso_porcentaje, fecha_asignada, created_at')
     .single();
 
   if (error) {

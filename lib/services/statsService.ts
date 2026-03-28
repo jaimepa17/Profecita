@@ -50,6 +50,9 @@ type AsignaturaStatsRow = {
 type GrupoStatsRow = {
   grupo_id: string;
   estudiantes_count: number;
+  parciales_count: number;
+  bloques_count: number;
+  actividades_count: number;
 };
 
 function makeRecord<T>(ids: string[], factory: () => T): Record<string, T> {
@@ -151,7 +154,7 @@ export async function getGruposStatsByIds(
     return ok({});
   }
 
-  const { data, error } = await supabase.rpc('get_grupos_stats', {
+  const { data, error } = await supabase.rpc('get_grupos_stats_complete', {
     grupo_ids: ids,
   });
 
@@ -169,83 +172,10 @@ export async function getGruposStatsByIds(
   ((data as GrupoStatsRow[]) ?? []).forEach((row) => {
     stats[row.grupo_id] = {
       estudiantes: row.estudiantes_count ?? 0,
-      parciales: 0,
-      bloques: 0,
-      actividades: 0,
+      parciales: row.parciales_count ?? 0,
+      bloques: row.bloques_count ?? 0,
+      actividades: row.actividades_count ?? 0,
     };
-  });
-
-  // Conteo de parciales por grupo.
-  const { data: parcialesData, error: parcialesError } = await supabase
-    .from('parciales')
-    .select('id,grupo_id')
-    .in('grupo_id', ids);
-
-  if (parcialesError) {
-    return fail('No se pudo cargar la información de parciales por grupo.', parcialesError.message);
-  }
-
-  const parcialRows = (parcialesData as Array<{ id: string; grupo_id: string }>) ?? [];
-  const parcialToGrupo: Record<string, string> = {};
-  parcialRows.forEach((parcial) => {
-    parcialToGrupo[parcial.id] = parcial.grupo_id;
-    if (stats[parcial.grupo_id]) {
-      stats[parcial.grupo_id].parciales += 1;
-    }
-  });
-
-  const parcialIds = parcialRows.map((row) => row.id);
-  if (parcialIds.length === 0) {
-    return ok(stats);
-  }
-
-  // Conteo de bloques por grupo (via parcial).
-  const { data: bloquesData, error: bloquesError } = await supabase
-    .from('bloques')
-    .select('id,parcial_id')
-    .in('parcial_id', parcialIds);
-
-  if (bloquesError) {
-    return fail('No se pudo cargar la información de bloques por grupo.', bloquesError.message);
-  }
-
-  const bloqueRows = (bloquesData as Array<{ id: string; parcial_id: string }>) ?? [];
-  const bloqueToGrupo: Record<string, string> = {};
-  bloqueRows.forEach((bloque) => {
-    const grupoId = parcialToGrupo[bloque.parcial_id];
-    if (!grupoId) {
-      return;
-    }
-
-    bloqueToGrupo[bloque.id] = grupoId;
-    if (stats[grupoId]) {
-      stats[grupoId].bloques += 1;
-    }
-  });
-
-  const bloqueIds = bloqueRows.map((row) => row.id);
-  if (bloqueIds.length === 0) {
-    return ok(stats);
-  }
-
-  // Conteo de actividades por grupo (via bloque).
-  const { data: actividadesData, error: actividadesError } = await supabase
-    .from('actividades')
-    .select('id,bloque_id')
-    .in('bloque_id', bloqueIds);
-
-  if (actividadesError) {
-    return fail('No se pudo cargar la información de actividades por grupo.', actividadesError.message);
-  }
-
-  const actividadRows = (actividadesData as Array<{ id: string; bloque_id: string }>) ?? [];
-  actividadRows.forEach((actividad) => {
-    const grupoId = bloqueToGrupo[actividad.bloque_id];
-    if (!grupoId || !stats[grupoId]) {
-      return;
-    }
-
-    stats[grupoId].actividades += 1;
   });
 
   return ok(stats);

@@ -35,6 +35,21 @@ export type ReporteGrupo = {
   };
 };
 
+type GrupoRow = {
+  id: string;
+  nombre: string;
+  turno?: string;
+  asignaturas: {
+    nombre: string;
+    anios: {
+      nombre: string;
+      carreras: {
+        nombre: string;
+      }[];
+    }[];
+  }[];
+};
+
 function roundTo2(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -47,6 +62,7 @@ export async function getReporteNotasPorGrupo(
   }
 
   try {
+    // 1. Obtener información del grupo con relaciones anidadas
     const { data: grupoData, error: grupoError } = await supabase
       .from('grupos')
       .select(
@@ -76,64 +92,95 @@ export async function getReporteNotasPorGrupo(
       return fail('El grupo no existe.');
     }
 
-    const { data: parcialesData, error: parcialesError } = await supabase
+    const grupo = grupoData as GrupoRow;
+
+    // 2. Obtener parciales, bloques y actividades en una sola consulta con joins
+    const { data: actividadesNested, error: actividadesError } = await supabase
       .from('parciales')
-      .select('id, nombre, peso_porcentaje')
+      .select(
+        `
+        id,
+        nombre,
+        peso_porcentaje,
+        bloques (
+          id,
+          nombre,
+          peso_porcentaje,
+          actividades (
+            id,
+            nombre,
+            tipo,
+            peso_porcentaje,
+            puntaje_maximo
+          )
+        )
+      `
+      )
       .eq('grupo_id', grupoId)
-      .order('created_at');
-
-    if (parcialesError) {
-      return fail('No se pudieron cargar los parciales.', parcialesError.message);
-    }
-
-    const parcialIds = parcialesData?.map((p) => p.id) ?? [];
-
-    const { data: bloquesData, error: bloquesError } = await supabase
-      .from('bloques')
-      .select('id, parcial_id, nombre, peso_porcentaje')
-      .in('parcial_id', parcialIds)
-      .order('created_at');
-
-    if (bloquesError) {
-      return fail('No se pudieron cargar los bloques.', bloquesError.message);
-    }
-
-    const bloqueIds = bloquesData?.map((b) => b.id) ?? [];
-
-    const { data: actividadesData, error: actividadesError } = await supabase
-      .from('actividades')
-      .select('id, bloque_id, nombre, tipo, peso_porcentaje, puntaje_maximo')
-      .in('bloque_id', bloqueIds)
       .order('created_at');
 
     if (actividadesError) {
       return fail('No se pudieron cargar las actividades.', actividadesError.message);
     }
 
-    const { data: grupoEstudiantesData, error: grupoEstudiantesError } = await supabase
-      .from('grupo_estudiantes')
-      .select('estudiante_id')
-      .eq('grupo_id', grupoId);
+    // Aplanar la estructura anidada
+    const actividades: ReporteGrupo['actividades'] = [];
+    const parcialesMap = new Map<string, { nombre: string }>();
+    const bloquesMap = new Map<string, { nombre: string }>();
 
-    if (grupoEstudiantesError) {
-      return fail(
-        'No se pudieron cargar los estudiantes del grupo.',
-        grupoEstudiantesError.message
-      );
+    (actividadesNested ?? []).forEach((parcial) => {
+      parcialesMap.set(parcial.id, { nombre: parcial.nombre });
+      
+      (parcial.bloques ?? []).forEach((bloque) => {
+        bloquesMap.set(bloque.id, { nombre: bloque.nombre });
+        
+        (bloque.actividades ?? []).forEach((actividad) => {
+          actividades.push({
+            id: actividad.id,
+            nombre: actividad.nombre,
+            tipo: actividad.tipo as 'corte' | 'examen',
+            peso_porcentaje: Number(actividad.peso_porcentaje ?? 0),
+            puntaje_maximo: Number(actividad.puntaje_maximo ?? 0),
+            parcial: parcial.nombre,
+            bloque: bloque.nombre,
+          });
+        });
+      });
+    });
+
+    // 3. Obtener estudiantes del grupo con una sola consulta (usando join)
+    const { data: grupoEstudiantes, error: estudiantesError } = await supabase
+      .from('grupo_estudiantes')
+      .select(
+        `
+        estudiantes (
+          id,
+          nombre_completo,
+          identificacion
+        )
+      `
+      )
+      .eq('grupo_id', grupoId)
+      .order('nombre_completo', { foreignTable: 'estudiantes' });
+
+    if (estudiantesError) {
+      return fail('No se pudieron cargar los estudiantes del grupo.', estudiantesError.message);
     }
 
-    const estudianteIds = grupoEstudiantesData?.map((ge) => ge.estudiante_id) ?? [];
+    const estudiantesData = (grupoEstudiantes ?? [])
+      .map((ge) => ge.estudiantes)
+      .filter(Boolean)
+      .flat() as Array<{ id: string; nombre_completo: string; identificacion?: string }>;
 
-    if (estudianteIds.length === 0) {
+    if (estudiantesData.length === 0) {
       return ok({
         grupo: {
-          id: grupoData.id,
-          nombre: grupoData.nombre,
-          turno: grupoData.turno,
-          asignatura: (grupoData.asignaturas as any)?.nombre ?? 'Sin asignatura',
-          carrera:
-            (grupoData.asignaturas as any)?.anios?.carreras?.nombre ?? 'Sin carrera',
-          anio: (grupoData.asignaturas as any)?.anios?.nombre ?? 'Sin año',
+          id: grupo.id,
+          nombre: grupo.nombre,
+          turno: grupo.turno,
+          asignatura: grupo.asignaturas[0]?.nombre ?? 'Sin asignatura',
+          carrera: grupo.asignaturas[0]?.anios[0]?.carreras[0]?.nombre ?? 'Sin carrera',
+          anio: grupo.asignaturas[0]?.anios[0]?.nombre ?? 'Sin año',
         },
         actividades: [],
         estudiantes: [],
@@ -148,18 +195,10 @@ export async function getReporteNotasPorGrupo(
       });
     }
 
-    const { data: estudiantesData, error: estudiantesError } = await supabase
-      .from('estudiantes')
-      .select('id, nombre_completo, identificacion')
-      .in('id', estudianteIds)
-      .order('nombre_completo');
+    const estudianteIds = estudiantesData.map((e) => e.id);
+    const actividadIds = actividades.map((a) => a.id);
 
-    if (estudiantesError) {
-      return fail('No se pudieron cargar los estudiantes.', estudiantesError.message);
-    }
-
-    const actividadIds = actividadesData?.map((a) => a.id) ?? [];
-
+    // 4. Obtener notas para estos estudiantes y actividades
     const { data: notasData, error: notasError } = await supabase
       .from('notas')
       .select('actividad_id, estudiante_id, puntaje_obtenido')
@@ -170,30 +209,12 @@ export async function getReporteNotasPorGrupo(
       return fail('No se pudieron cargar las notas.', notasError.message);
     }
 
-    const parcialesMap = new Map(parcialesData?.map((p) => [p.id, p]) ?? []);
-    const bloquesMap = new Map(bloquesData?.map((b) => [b.id, b]) ?? []);
-
-    const actividades = (actividadesData ?? []).map((actividad) => {
-      const bloque = bloquesMap.get(actividad.bloque_id);
-      const parcial = bloque ? parcialesMap.get(bloque.parcial_id) : undefined;
-
-      return {
-        id: actividad.id,
-        nombre: actividad.nombre,
-        tipo: actividad.tipo as 'corte' | 'examen',
-        peso_porcentaje: Number(actividad.peso_porcentaje ?? 0),
-        puntaje_maximo: Number(actividad.puntaje_maximo ?? 0),
-        parcial: parcial?.nombre ?? 'Sin parcial',
-        bloque: bloque?.nombre ?? 'Sin bloque',
-      };
-    });
-
     const notasMap = new Map<string, number>();
     (notasData ?? []).forEach((nota) => {
       notasMap.set(`${nota.estudiante_id}_${nota.actividad_id}`, Number(nota.puntaje_obtenido));
     });
 
-    const estudiantes = (estudiantesData ?? []).map((estudiante) => {
+    const estudiantes = estudiantesData.map((estudiante) => {
       const notas: Record<string, number> = {};
       actividades.forEach((actividad) => {
         const nota = notasMap.get(`${estudiante.id}_${actividad.id}`);
@@ -214,12 +235,12 @@ export async function getReporteNotasPorGrupo(
 
     return ok({
       grupo: {
-        id: grupoData.id,
-        nombre: grupoData.nombre,
-        turno: grupoData.turno,
-        asignatura: (grupoData.asignaturas as any)?.nombre ?? 'Sin asignatura',
-        carrera: (grupoData.asignaturas as any)?.anios?.carreras?.nombre ?? 'Sin carrera',
-        anio: (grupoData.asignaturas as any)?.anios?.nombre ?? 'Sin año',
+        id: grupo.id,
+        nombre: grupo.nombre,
+        turno: grupo.turno,
+        asignatura: grupo.asignaturas[0]?.nombre ?? 'Sin asignatura',
+        carrera: grupo.asignaturas[0]?.anios[0]?.carreras[0]?.nombre ?? 'Sin carrera',
+        anio: grupo.asignaturas[0]?.anios[0]?.nombre ?? 'Sin año',
       },
       actividades,
       estudiantes,

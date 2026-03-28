@@ -47,7 +47,7 @@ export async function listEstudiantes(): Promise<ServiceResult<Estudiante[]>> {
 
   const { data, error } = await supabase
     .from('estudiantes')
-    .select('*')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
     .eq('profesor_id', user.data)
     .order('created_at', { ascending: false });
 
@@ -67,7 +67,7 @@ export async function listEstudiantesByProfesor(
 
   const { data, error } = await supabase
     .from('estudiantes')
-    .select('*')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
     .eq('profesor_id', profesorId)
     .order('created_at', { ascending: false });
 
@@ -92,7 +92,7 @@ export async function getEstudianteById(
 
   const { data, error } = await supabase
     .from('estudiantes')
-    .select('*')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
     .eq('id', id)
     .eq('profesor_id', user.data)
     .maybeSingle();
@@ -126,7 +126,7 @@ export async function createEstudiante(
   const { data, error } = await supabase
     .from('estudiantes')
     .insert(payload)
-    .select('*')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
     .single();
 
   if (error) {
@@ -172,7 +172,7 @@ export async function updateEstudiante(
     .update(updates)
     .eq('id', id)
     .eq('profesor_id', user.data)
-    .select('*')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
     .single();
 
   if (error) {

@@ -88,7 +88,7 @@ async function validateGrupoParcialRules(
 export async function listParciales(): Promise<ServiceResult<Parcial[]>> {
   const { data, error } = await supabase
     .from('parciales')
-    .select('*')
+    .select('id, grupo_id, nombre, peso_porcentaje, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -107,7 +107,7 @@ export async function listParcialesByGrupo(
 
   const { data, error } = await supabase
     .from('parciales')
-    .select('*')
+    .select('id, grupo_id, nombre, peso_porcentaje, created_at')
     .eq('grupo_id', grupoId)
     .order('created_at', { ascending: false });
 
@@ -125,7 +125,7 @@ export async function getParcialById(id: string): Promise<ServiceResult<Parcial 
 
   const { data, error } = await supabase
     .from('parciales')
-    .select('*')
+    .select('id, grupo_id, nombre, peso_porcentaje, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -171,7 +171,7 @@ export async function createParcial(
   const { data, error } = await supabase
     .from('parciales')
     .insert(payload)
-    .select('*')
+    .select('id, grupo_id, nombre, peso_porcentaje, created_at')
     .single();
 
   if (error) {
@@ -231,7 +231,7 @@ export async function updateParcial(
     .from('parciales')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, grupo_id, nombre, peso_porcentaje, created_at')
     .single();
 
   if (error) {

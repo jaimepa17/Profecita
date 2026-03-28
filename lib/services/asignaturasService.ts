@@ -31,7 +31,7 @@ function validateNombre(nombre?: string): string | null {
 export async function listAsignaturas(): Promise<ServiceResult<Asignatura[]>> {
   const { data, error } = await supabase
     .from('asignaturas')
-    .select('*')
+    .select('id, anio_id, nombre, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -50,7 +50,7 @@ export async function listAsignaturasByAnio(
 
   const { data, error } = await supabase
     .from('asignaturas')
-    .select('*')
+    .select('id, anio_id, nombre, created_at')
     .eq('anio_id', anioId)
     .order('created_at', { ascending: false });
 
@@ -70,7 +70,7 @@ export async function getAsignaturaById(
 
   const { data, error } = await supabase
     .from('asignaturas')
-    .select('*')
+    .select('id, anio_id, nombre, created_at')
     .eq('id', id)
     .maybeSingle();
 
@@ -101,7 +101,7 @@ export async function createAsignatura(
   const { data, error } = await supabase
     .from('asignaturas')
     .insert(payload)
-    .select('*')
+    .select('id, anio_id, nombre, created_at')
     .single();
 
   if (error) {
@@ -137,7 +137,7 @@ export async function updateAsignatura(
     .from('asignaturas')
     .update(updates)
     .eq('id', id)
-    .select('*')
+    .select('id, anio_id, nombre, created_at')
     .single();
 
   if (error) {
