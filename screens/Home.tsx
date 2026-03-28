@@ -23,8 +23,9 @@ import {
   type Carrera as CarreraModel,
 } from '@/lib/services/carrerasService';
 import { getCarrerasStatsByIds, type CarreraStats } from '@/lib/services/statsService';
-import { useRealtimeCollection } from '@/lib/realtime';
+import { useRealtimeCollection, useRealtimeTable } from '@/lib/realtime';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
+import { listEstudiantesByProfesor } from '@/lib/services/estudiantesService';
 
 type Carrera = CarreraModel;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -61,6 +62,8 @@ export default function Home() {
   const [pendingDeleteCarrera, setPendingDeleteCarrera] = useState<Carrera | null>(null);
   const [realtimeUserId, setRealtimeUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [estudianteIds, setEstudianteIds] = useState<string[]>([]);
+  const [statsVersion, setStatsVersion] = useState(0);
   const { run: runCreateCarrera, isRunning: creatingCarrera } = useSingleFlight();
   const { run: runSignOut, isRunning: signingOut } = useSingleFlight();
   const { run: runDeleteCarrera, isRunning: isDeletingCarrera } =
@@ -87,6 +90,38 @@ export default function Home() {
     setLoading(false);
     setInitialLoaded(true);
   }, [initialLoaded]);
+
+  const incrementStatsVersion = useCallback(() => {
+    setStatsVersion(v => v + 1);
+  }, []);
+
+  const handleEstudianteInsert = useCallback((row: any) => {
+    setEstudianteIds(prev => [...prev, row.id]);
+    incrementStatsVersion();
+  }, [incrementStatsVersion]);
+
+  const handleEstudianteUpdate = useCallback((row: any) => {
+    // Si el estudiante cambió de profesor (no debería), podríamos necesitar actualizar la lista.
+    // Por simplicidad, recargamos la lista completa.
+    // Pero podemos verificar si el profesor_id sigue siendo el mismo.
+    // Por ahora, solo incrementamos statsVersion.
+    incrementStatsVersion();
+  }, [incrementStatsVersion]);
+
+  const handleEstudianteDelete = useCallback((row: { id: string }) => {
+    setEstudianteIds(prev => prev.filter(id => id !== row.id));
+    incrementStatsVersion();
+  }, [incrementStatsVersion]);
+
+  const handleGrupoEstudianteEvent = useCallback((estudianteId: string) => {
+    setEstudianteIds(currentIds => {
+      if (currentIds.includes(estudianteId)) {
+        // Este estudiante pertenece al profesor, incrementar stats
+        incrementStatsVersion();
+      }
+      return currentIds;
+    });
+  }, [incrementStatsVersion]);
 
   const openCreateCarrera = () => {
     setCreateCarreraVisible(true);
@@ -230,6 +265,28 @@ export default function Home() {
   useEffect(() => {
     let mounted = true;
 
+    const loadEstudiantes = async () => {
+      if (!realtimeUserId) {
+        setEstudianteIds([]);
+        return;
+      }
+      const result = await listEstudiantesByProfesor(realtimeUserId);
+      if (!mounted) return;
+      if (result.ok) {
+        setEstudianteIds(result.data.map(e => e.id));
+      }
+    };
+
+    void loadEstudiantes();
+
+    return () => {
+      mounted = false;
+    };
+  }, [realtimeUserId]);
+
+  useEffect(() => {
+    let mounted = true;
+
     const loadStats = async () => {
       if (carreras.length === 0) {
         setStatsByCarrera({});
@@ -275,7 +332,7 @@ export default function Home() {
     return () => {
       mounted = false;
     };
-  }, [carreras]);
+  }, [carreras, statsVersion]);
 
   useRealtimeCollection<Carrera>({
     enabled: !!realtimeUserId,
@@ -284,6 +341,26 @@ export default function Home() {
     channelName: `realtime:carreras:${realtimeUserId ?? 'anon'}`,
     setItems: setCarreras,
     onForegroundSync: cargarCarreras,
+  });
+
+  useRealtimeTable({
+    enabled: !!realtimeUserId,
+    table: 'estudiantes',
+    filter: realtimeUserId ? `profesor_id=eq.${realtimeUserId}` : undefined,
+    channelName: `realtime:estudiantes:${realtimeUserId ?? 'anon'}`,
+    onInsert: handleEstudianteInsert,
+    onUpdate: handleEstudianteUpdate,
+    onDelete: handleEstudianteDelete,
+  });
+
+  useRealtimeTable({
+    enabled: !!realtimeUserId,
+    table: 'grupo_estudiantes',
+    filter: undefined,
+    channelName: `realtime:grupo_estudiantes:${realtimeUserId ?? 'anon'}`,
+    onInsert: (row) => handleGrupoEstudianteEvent((row as any).estudiante_id),
+    onUpdate: (row) => handleGrupoEstudianteEvent((row as any).estudiante_id),
+    onDelete: (row) => handleGrupoEstudianteEvent((row as any).estudiante_id),
   });
 
   const renderCarrera = ({ item, index }: { item: Carrera; index: number }) => {

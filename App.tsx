@@ -1,6 +1,6 @@
 import './global.css';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, LogBox } from 'react-native';
+import { View, ActivityIndicator, Text, LogBox, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
