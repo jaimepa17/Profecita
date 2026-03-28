@@ -8,3 +8,7 @@
 body {
 	font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
+
+html, body, #root {
+  height: 100%;
+}

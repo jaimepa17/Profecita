@@ -48,6 +48,9 @@ export default function RootNavigatorStack({ session }: RootNavigatorProps) {
         gestureDirection: 'horizontal',
         cardStyleInterpolator: forHorizontalSlide,
         transitionSpec: getTransitionSpec(),
+        cardStyle: {
+          flex: 1,
+        },
       }}
     >
       <Stack.Screen

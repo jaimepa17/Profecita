@@ -8,6 +8,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +21,7 @@ import {
   type ReporteGrupo,
 } from '@/lib/services/reportesService';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
+import { BREAKPOINTS } from '@/lib/constants/breakpoints';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Reportes'>;
 type VistaMode = 'tabla' | 'agrupada';
@@ -54,6 +57,13 @@ function roundTo2(value: number): number {
 export default function Reportes() {
   const navigation = useNavigation<NavigationProp>();
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const isWeb = Platform.OS === 'web';
+  const { width: windowWidth } = useWindowDimensions();
+  
+  const studentColumnWidth = isWeb ? 200 : 150;
+  const activityColumnWidth = isWeb ? 150 : 100;
+  const averageColumnWidth = isWeb ? 120 : 100;
+  const idColumnWidth = isWeb ? 120 : 0;
 
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [selectedGrupoId, setSelectedGrupoId] = useState<string | null>(null);
@@ -196,39 +206,42 @@ export default function Reportes() {
     if (!reporte) return null;
 
     const { estadisticas } = reporte;
+    const minWidthClass = isWeb ? 'min-w-[150px]' : 'min-w-[100px]';
+    const fontSizeClass = isWeb ? 'text-sm' : 'text-xs';
+    const valueFontSizeClass = isWeb ? 'text-xl' : 'text-lg';
 
     return (
       <View className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-        <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
+        <Text className={`${fontSizeClass} font-black uppercase tracking-wide text-[#7A6857]`}>
           Estadísticas del grupo
         </Text>
 
         <View className="mt-2 flex-row flex-wrap gap-3">
-          <View className="flex-1 min-w-[100px] rounded-xl border-[3px] border-black bg-[#D7ECFF] px-3 py-2">
-            <Text className="text-xs font-semibold text-[#44596A]">Promedio</Text>
-            <Text className="text-lg font-black text-black">{estadisticas.promedioGeneral}</Text>
+          <View className={`flex-1 ${minWidthClass} rounded-xl border-[3px] border-black bg-[#D7ECFF] px-3 py-2`}>
+            <Text className={`${fontSizeClass} font-semibold text-[#44596A]`}>Promedio</Text>
+            <Text className={`${valueFontSizeClass} font-black text-black`}>{estadisticas.promedioGeneral}</Text>
           </View>
 
-          <View className="flex-1 min-w-[100px] rounded-xl border-[3px] border-black bg-[#BDE9C7] px-3 py-2">
-            <Text className="text-xs font-semibold text-[#4C5B42]">Nota más alta</Text>
-            <Text className="text-lg font-black text-black">{estadisticas.notaMasAlta}</Text>
+          <View className={`flex-1 ${minWidthClass} rounded-xl border-[3px] border-black bg-[#BDE9C7] px-3 py-2`}>
+            <Text className={`${fontSizeClass} font-semibold text-[#4C5B42]`}>Nota más alta</Text>
+            <Text className={`${valueFontSizeClass} font-black text-black`}>{estadisticas.notaMasAlta}</Text>
           </View>
 
-          <View className="flex-1 min-w-[100px] rounded-xl border-[3px] border-black bg-[#FFC9C2] px-3 py-2">
-            <Text className="text-xs font-semibold text-[#6B4A4A]">Nota más baja</Text>
-            <Text className="text-lg font-black text-black">{estadisticas.notaMasBaja}</Text>
+          <View className={`flex-1 ${minWidthClass} rounded-xl border-[3px] border-black bg-[#FFC9C2] px-3 py-2`}>
+            <Text className={`${fontSizeClass} font-semibold text-[#6B4A4A]`}>Nota más baja</Text>
+            <Text className={`${valueFontSizeClass} font-black text-black`}>{estadisticas.notaMasBaja}</Text>
           </View>
         </View>
 
         <View className="mt-2 flex-row gap-3">
-          <View className="flex-1 rounded-xl border-[3px] border-black bg-[#F3E7D5] px-3 py-2">
-            <Text className="text-xs font-semibold text-[#5E5045]">Estudiantes</Text>
-            <Text className="text-lg font-black text-black">{estadisticas.totalEstudiantes}</Text>
+          <View className={`flex-1 rounded-xl border-[3px] border-black bg-[#F3E7D5] px-3 py-2`}>
+            <Text className={`${fontSizeClass} font-semibold text-[#5E5045]`}>Estudiantes</Text>
+            <Text className={`${valueFontSizeClass} font-black text-black`}>{estadisticas.totalEstudiantes}</Text>
           </View>
 
-          <View className="flex-1 rounded-xl border-[3px] border-black bg-[#F3E7D5] px-3 py-2">
-            <Text className="text-xs font-semibold text-[#5E5045]">Actividades</Text>
-            <Text className="text-lg font-black text-black">{estadisticas.totalActividades}</Text>
+          <View className={`flex-1 rounded-xl border-[3px] border-black bg-[#F3E7D5] px-3 py-2`}>
+            <Text className={`${fontSizeClass} font-semibold text-[#5E5045]`}>Actividades</Text>
+            <Text className={`${valueFontSizeClass} font-black text-black`}>{estadisticas.totalActividades}</Text>
           </View>
         </View>
       </View>
@@ -238,25 +251,38 @@ export default function Reportes() {
   const renderVistaTabla = () => {
     if (!reporte || reporte.actividades.length === 0) return null;
 
+    const fontSizeClass = isWeb ? 'text-sm' : 'text-xs';
+    const smallFontSizeClass = isWeb ? 'text-xs' : 'text-[10px]';
+    
+    // Estilos dinámicos para columnas de actividades
+    const activityStyle = isWeb 
+      ? { flex: 1, minWidth: 120, maxWidth: 200 }
+      : { width: activityColumnWidth };
+
     return (
       <ScrollView horizontal showsHorizontalScrollIndicator>
-        <View className="mt-3">
+        <View className="mt-3" style={isWeb ? { width: '100%' } : {}}>
           <View className="flex-row border-b-[3px] border-black bg-[#FFF7E8]">
-            <View className="w-[150px] px-3 py-2 border-r-[3px] border-black">
-              <Text className="text-xs font-black text-black">Estudiante</Text>
+            {isWeb && (
+              <View style={{ width: idColumnWidth }} className="px-3 py-2 border-r-[3px] border-black">
+                <Text className={`${fontSizeClass} font-black text-black`}>ID</Text>
+              </View>
+            )}
+            <View style={{ width: studentColumnWidth }} className="px-3 py-2 border-r-[3px] border-black">
+              <Text className={`${fontSizeClass} font-black text-black`}>Estudiante</Text>
             </View>
             {reporte.actividades.map((actividad) => (
-              <View key={actividad.id} className="w-[100px] px-3 py-2 border-r-[3px] border-black">
-                <Text className="text-xs font-black text-black" numberOfLines={2}>
+              <View key={actividad.id} style={activityStyle} className="px-3 py-2 border-r-[3px] border-black">
+                <Text className={`${fontSizeClass} font-black text-black`} numberOfLines={2}>
                   {actividad.nombre}
                 </Text>
-                <Text className="text-[10px] font-semibold text-[#7A6857]">
-                  {actividad.peso_porcentaje} pts
+                <Text className={`${smallFontSizeClass} font-semibold text-[#7A6857]`}>
+                  {isWeb ? `${actividad.tipo} • ${actividad.peso_porcentaje} pts` : `${actividad.peso_porcentaje} pts`}
                 </Text>
               </View>
             ))}
-            <View className="w-[100px] px-3 py-2">
-              <Text className="text-xs font-black text-black">Promedio</Text>
+            <View style={{ width: averageColumnWidth }} className="px-3 py-2">
+              <Text className={`${fontSizeClass} font-black text-black`}>Promedio</Text>
             </View>
           </View>
 
@@ -273,8 +299,15 @@ export default function Reportes() {
                 onPress={() => setEstudianteDetalle(estudiante)}
                 className="flex-row border-b-[3px] border-black bg-[#FDF9F1]"
               >
-                <View className="w-[150px] px-3 py-2 border-r-[3px] border-black">
-                  <Text className="text-xs font-semibold text-black" numberOfLines={2}>
+                {isWeb && (
+                  <View style={{ width: idColumnWidth }} className="px-3 py-2 border-r-[3px] border-black">
+                    <Text className={`${fontSizeClass} font-semibold text-[#5E5045]`} numberOfLines={1}>
+                      {estudiante.identificacion || '-'}
+                    </Text>
+                  </View>
+                )}
+                <View style={{ width: studentColumnWidth }} className="px-3 py-2 border-r-[3px] border-black">
+                  <Text className={`${fontSizeClass} font-semibold text-black`} numberOfLines={isWeb ? undefined : 2}>
                     {estudiante.nombre_completo}
                   </Text>
                 </View>
@@ -283,16 +316,17 @@ export default function Reportes() {
                   return (
                     <View
                       key={actividad.id}
-                      className="w-[100px] px-3 py-2 border-r-[3px] border-black items-center"
+                      style={activityStyle}
+                      className="px-3 py-2 border-r-[3px] border-black items-center"
                     >
-                      <Text className="text-xs font-black text-black">
+                      <Text className={`${fontSizeClass} font-black text-black`}>
                         {nota !== undefined ? nota : '-'}
                       </Text>
                     </View>
                   );
                 })}
-                <View className="w-[100px] px-3 py-2 items-center">
-                  <Text className="text-xs font-black text-[#1E140D]">{promedio}</Text>
+                <View style={{ width: averageColumnWidth }} className="px-3 py-2 items-center">
+                  <Text className={`${fontSizeClass} font-black text-[#1E140D]`}>{promedio}</Text>
                 </View>
               </TouchableOpacity>
             );
@@ -312,6 +346,8 @@ export default function Reportes() {
       }
       parcialesMap.get(actividad.parcial)!.push(actividad);
     });
+
+    const maxEstudiantes = isWeb ? reporte.estudiantes.length : 3;
 
     return (
       <View className="mt-3 gap-3">
@@ -339,7 +375,7 @@ export default function Reportes() {
                 </View>
 
                 <View className="mt-2">
-                  {reporte.estudiantes.slice(0, 3).map((estudiante) => {
+                  {reporte.estudiantes.slice(0, maxEstudiantes).map((estudiante) => {
                     const nota = estudiante.notas[actividad.id];
                     return (
                       <View
@@ -355,7 +391,7 @@ export default function Reportes() {
                       </View>
                     );
                   })}
-                  {reporte.estudiantes.length > 3 && (
+                  {!isWeb && reporte.estudiantes.length > 3 && (
                     <Text className="text-[10px] font-semibold text-[#7A6857] mt-1">
                       +{reporte.estudiantes.length - 3} estudiantes más
                     </Text>
