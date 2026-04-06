@@ -54,11 +54,164 @@ function roundTo2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
+interface ActivityCardProps {
+  actividad: ReporteGrupo['actividades'][0];
+  estudiantes: ReporteGrupo['estudiantes'];
+  promedioActividad: number;
+  isAndroid: boolean;
+  carruselIndex: number;
+  onCarruselIndexChange: (index: number) => void;
+}
+
+const ActivityCard: React.FC<ActivityCardProps> = ({
+  actividad,
+  estudiantes,
+  promedioActividad,
+  isAndroid,
+  carruselIndex,
+  onCarruselIndexChange,
+}) => {
+  const estudiantesPorPagina = 3;
+  const totalPaginas = Math.ceil(estudiantes.length / estudiantesPorPagina);
+  const { width: windowWidth } = useWindowDimensions();
+  const pageWidth = windowWidth - 56; // Margen para padding del contenedor
+
+  // Para Android: carrusel horizontal
+  if (isAndroid && estudiantes.length > 0) {
+    return (
+      <View className="mt-2 rounded-xl border-[3px] border-black bg-[#FDF9F1] px-3 py-2">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1">
+            <Text className="text-xs font-black text-black">{actividad.nombre}</Text>
+            <Text className="text-[10px] font-semibold text-[#7A6857]">
+              {actividad.bloque} • {actividad.tipo} • {actividad.peso_porcentaje} pts
+            </Text>
+          </View>
+          <View className="rounded-full border-[3px] border-black bg-[#D7ECFF] px-2 py-1">
+            <Text className="text-xs font-black text-black">
+              {promedioActividad}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-2">
+          <FlatList
+            data={Array.from({ length: totalPaginas }).map((_, pagina) => {
+              const inicio = pagina * estudiantesPorPagina;
+              const fin = inicio + estudiantesPorPagina;
+              return estudiantes.slice(inicio, fin);
+            })}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => index.toString()}
+            onMomentumScrollEnd={(e) => {
+              const pagina = Math.round(e.nativeEvent.contentOffset.x / pageWidth);
+              onCarruselIndexChange(pagina);
+            }}
+            scrollEventThrottle={16}
+            bounces={false}
+            alwaysBounceHorizontal={false}
+            nestedScrollEnabled={true}
+            style={{ width: pageWidth }}
+            renderItem={({ item: estudiantesPagina }) => (
+              <View style={{ width: pageWidth }}>
+                {estudiantesPagina.map((estudiante) => {
+                  const nota = estudiante.notas[actividad.id];
+                  return (
+                    <View
+                      key={estudiante.id}
+                      className="flex-row items-center justify-between py-1 border-b border-[#DCCEC2]/40"
+                      style={{ paddingHorizontal: 8 }}
+                    >
+                      <Text 
+                        className="text-[11px] font-semibold text-[#5E5045]" 
+                        style={{ flex: 1, flexShrink: 0 }}
+                        numberOfLines={1}
+                      >
+                        {estudiante.nombre_completo}
+                      </Text>
+                      <Text 
+                        className="text-sm font-black text-black"
+                        style={{ minWidth: 50, textAlign: 'right', overflow: 'visible' }}
+                      >
+                        {nota !== undefined ? nota : '-'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          />
+          {/* Dots indicadores */}
+          {totalPaginas > 1 && (
+            <View className="flex-row justify-center mt-1 gap-1">
+              {Array.from({ length: totalPaginas }).map((_, i) => (
+                <View
+                  key={i}
+                  className={`h-2 w-2 rounded-full ${i === carruselIndex ? 'bg-black' : 'bg-gray-300'}`}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // Para web o Android sin carrusel: lista vertical simple
+  return (
+    <View className="mt-2 rounded-xl border-[3px] border-black bg-[#FDF9F1] px-3 py-2">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="text-xs font-black text-black">{actividad.nombre}</Text>
+          <Text className="text-[10px] font-semibold text-[#7A6857]">
+            {actividad.bloque} • {actividad.tipo} • {actividad.peso_porcentaje} pts
+          </Text>
+        </View>
+        <View className="rounded-full border-[3px] border-black bg-[#D7ECFF] px-2 py-1">
+          <Text className="text-xs font-black text-black">
+            {promedioActividad}
+          </Text>
+        </View>
+      </View>
+
+      <View className="mt-2">
+        {estudiantes.slice(0, 3).map((estudiante) => {
+          const nota = estudiante.notas[actividad.id];
+          return (
+            <View
+              key={estudiante.id}
+              className="flex-row items-center justify-between py-1 border-b border-[#DCCEC2]/40"
+            >
+              <Text className="text-[11px] font-semibold text-[#5E5045] flex-1" numberOfLines={1}>
+                {estudiante.nombre_completo}
+              </Text>
+              <Text className="text-[11px] font-black text-black">
+                {nota !== undefined ? nota : '-'}
+              </Text>
+            </View>
+          );
+        })}
+        {estudiantes.length > 3 && (
+          <Text className="text-[10px] font-semibold text-[#7A6857] mt-1">
+            +{estudiantes.length - 3} estudiantes más
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+};
+
 export default function Reportes() {
   const navigation = useNavigation<NavigationProp>();
   const scrollViewRef = useRef<ScrollView | null>(null);
   const isWeb = Platform.OS === 'web';
+  const isAndroid = Platform.OS === 'android';
   const { width: windowWidth } = useWindowDimensions();
+  
+  const isMobileWeb = isWeb && windowWidth < BREAKPOINTS.tablet;
+  const isDesktop = isWeb && windowWidth >= BREAKPOINTS.tablet;
   
   const studentColumnWidth = isWeb ? 200 : 150;
   const activityColumnWidth = isWeb ? 150 : 100;
@@ -75,6 +228,9 @@ export default function Reportes() {
   const [estudianteDetalle, setEstudianteDetalle] = useState<
     ReporteGrupo['estudiantes'][0] | null
   >(null);
+  const [paginaEstudiantes, setPaginaEstudiantes] = useState(1);
+  const [carruselIndices, setCarruselIndices] = useState<Record<string, number>>({});
+  const estudiantesPorPagina = 10;
   const [feedbackModal, setFeedbackModal] = useState<{
     visible: boolean;
     payload: AlertModalPayload;
@@ -147,6 +303,19 @@ export default function Reportes() {
 
     void cargarReporte(selectedGrupoId);
   }, [selectedGrupoId, cargarReporte]);
+
+  useEffect(() => {
+    // Forzar vista agrupada en Android y web responsive
+    if (isAndroid || isMobileWeb) {
+      setVistaMode('agrupada');
+    }
+  }, [isAndroid, isMobileWeb]);
+
+  useEffect(() => {
+    // Resetear paginación cuando cambia el reporte
+    setPaginaEstudiantes(1);
+    setCarruselIndices({});
+  }, [reporte]);
 
   const gruposFiltrados = useMemo(() => {
     const query = filtroGrupo.trim().toLowerCase();
@@ -256,7 +425,7 @@ export default function Reportes() {
     
     // Estilos dinámicos para columnas de actividades
     const activityStyle = isWeb 
-      ? { flex: 1, minWidth: 120, maxWidth: 200 }
+      ? { flex: 1, minWidth: 80, maxWidth: 150 }
       : { width: activityColumnWidth };
 
     return (
@@ -347,7 +516,15 @@ export default function Reportes() {
       parcialesMap.get(actividad.parcial)!.push(actividad);
     });
 
-    const maxEstudiantes = isWeb ? reporte.estudiantes.length : 3;
+    // Para desktop: paginación de 10 estudiantes
+    const mostrarPaginacionDesktop = isDesktop && reporte.estudiantes.length > estudiantesPorPagina;
+    const inicioDesktop = (paginaEstudiantes - 1) * estudiantesPorPagina;
+    const finDesktop = inicioDesktop + estudiantesPorPagina;
+    const estudiantesPaginaDesktop = reporte.estudiantes.slice(inicioDesktop, finDesktop);
+
+    // Determinar qué lista de estudiantes mostrar según plataforma
+    const estudiantesAMostrar = isDesktop ? estudiantesPaginaDesktop : 
+                                reporte.estudiantes.slice(0, 3); // web responsive muestra 3
 
     return (
       <View className="mt-3 gap-3">
@@ -358,49 +535,100 @@ export default function Reportes() {
           >
             <Text className="text-sm font-black text-[#1E140D]">{parcial}</Text>
 
-            {actividades.map((actividad) => (
-              <View key={actividad.id} className="mt-2 rounded-xl border-[3px] border-black bg-[#FDF9F1] px-3 py-2">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Text className="text-xs font-black text-black">{actividad.nombre}</Text>
-                    <Text className="text-[10px] font-semibold text-[#7A6857]">
-                      {actividad.bloque} • {actividad.tipo} • {actividad.peso_porcentaje} pts
-                    </Text>
+            {actividades.map((actividad) => {
+              const promedioActividad = reporte.estadisticas.promedioPorActividad[actividad.id] ?? 0;
+              
+              if (isAndroid) {
+                return (
+                  <ActivityCard
+                    key={actividad.id}
+                    actividad={actividad}
+                    estudiantes={reporte.estudiantes}
+                    promedioActividad={promedioActividad}
+                    isAndroid={isAndroid}
+                    carruselIndex={carruselIndices[actividad.id] || 0}
+                    onCarruselIndexChange={(index) => 
+                      setCarruselIndices(prev => ({ ...prev, [actividad.id]: index }))
+                    }
+                  />
+                );
+              }
+              
+              // Para web: vista agrupada sin carrusel
+              return (
+                <View key={actividad.id} className="mt-2 rounded-xl border-[3px] border-black bg-[#FDF9F1] px-3 py-2">
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-1">
+                      <Text className="text-xs font-black text-black">{actividad.nombre}</Text>
+                      <Text className="text-[10px] font-semibold text-[#7A6857]">
+                        {actividad.bloque} • {actividad.tipo} • {actividad.peso_porcentaje} pts
+                      </Text>
+                    </View>
+                    <View className="rounded-full border-[3px] border-black bg-[#D7ECFF] px-2 py-1">
+                      <Text className="text-xs font-black text-black">
+                        {promedioActividad}
+                      </Text>
+                    </View>
                   </View>
-                  <View className="rounded-full border-[3px] border-black bg-[#D7ECFF] px-2 py-1">
-                    <Text className="text-xs font-black text-black">
-                      {reporte.estadisticas.promedioPorActividad[actividad.id] ?? 0}
-                    </Text>
-                  </View>
-                </View>
 
-                <View className="mt-2">
-                  {reporte.estudiantes.slice(0, maxEstudiantes).map((estudiante) => {
-                    const nota = estudiante.notas[actividad.id];
-                    return (
-                      <View
-                        key={estudiante.id}
-                        className="flex-row items-center justify-between py-1 border-b border-[#DCCEC2]/40"
-                      >
-                        <Text className="text-[11px] font-semibold text-[#5E5045] flex-1" numberOfLines={1}>
-                          {estudiante.nombre_completo}
-                        </Text>
-                        <Text className="text-[11px] font-black text-black">
-                          {nota !== undefined ? nota : '-'}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                  {!isWeb && reporte.estudiantes.length > 3 && (
-                    <Text className="text-[10px] font-semibold text-[#7A6857] mt-1">
-                      +{reporte.estudiantes.length - 3} estudiantes más
-                    </Text>
-                  )}
+                  <View className="mt-2">
+                    {estudiantesAMostrar.map((estudiante) => {
+                      const nota = estudiante.notas[actividad.id];
+                      return (
+                        <View
+                          key={estudiante.id}
+                          className="flex-row items-center justify-between py-1 border-b border-[#DCCEC2]/40"
+                        >
+                          <Text className="text-[11px] font-semibold text-[#5E5045] flex-1" numberOfLines={1}>
+                            {estudiante.nombre_completo}
+                          </Text>
+                          <Text className="text-[11px] font-black text-black">
+                            {nota !== undefined ? nota : '-'}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                    {!isDesktop && reporte.estudiantes.length > 3 && (
+                      <Text className="text-[10px] font-semibold text-[#7A6857] mt-1">
+                        +{reporte.estudiantes.length - 3} estudiantes más
+                      </Text>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         ))}
+        
+        {/* Controles de paginación para desktop */}
+        {mostrarPaginacionDesktop && (
+          <View className="mt-2 items-center">
+            <Text className="text-xs font-semibold text-[#5E5045] mb-2">
+              Mostrando {((paginaEstudiantes - 1) * estudiantesPorPagina) + 1}-
+              {Math.min(paginaEstudiantes * estudiantesPorPagina, reporte.estudiantes.length)} de {reporte.estudiantes.length} estudiantes
+            </Text>
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => setPaginaEstudiantes(prev => Math.max(1, prev - 1))}
+                disabled={paginaEstudiantes === 1}
+                className={`rounded-lg border-[2px] border-black px-4 py-2 ${paginaEstudiantes === 1 ? 'bg-gray-200' : 'bg-[#D7ECFF]'}`}
+              >
+                <Text className="text-xs font-black text-black">Anterior</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                onPress={() => setPaginaEstudiantes(prev => prev + 1)}
+                disabled={paginaEstudiantes * estudiantesPorPagina >= reporte.estudiantes.length}
+                className={`rounded-lg border-[2px] border-black px-4 py-2 ${paginaEstudiantes * estudiantesPorPagina >= reporte.estudiantes.length ? 'bg-gray-200' : 'bg-[#D7ECFF]'}`}
+              >
+                <Text className="text-xs font-black text-black">Siguiente</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
     );
   };
@@ -584,33 +812,35 @@ export default function Reportes() {
 
                   {renderEstadisticas()}
 
-                  <View className="mt-3 flex-row gap-2">
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      activeOpacity={0.9}
-                      onPress={() => setVistaMode('tabla')}
-                      className={`flex-1 rounded-xl border-[3px] border-black px-4 py-2 ${
-                        vistaMode === 'tabla' ? 'bg-[#D7ECFF]' : 'bg-[#F3E7D5]'
-                      }`}
-                    >
-                      <Text className="text-center text-xs font-black text-black">
-                        Vista tabla
-                      </Text>
-                    </TouchableOpacity>
+                  {!isMobileWeb && !isAndroid && (
+                    <View className="mt-3 flex-row gap-2">
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        activeOpacity={0.9}
+                        onPress={() => setVistaMode('tabla')}
+                        className={`flex-1 rounded-xl border-[3px] border-black px-4 py-2 ${
+                          vistaMode === 'tabla' ? 'bg-[#D7ECFF]' : 'bg-[#F3E7D5]'
+                        }`}
+                      >
+                        <Text className="text-center text-xs font-black text-black">
+                          Vista tabla
+                        </Text>
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      activeOpacity={0.9}
-                      onPress={() => setVistaMode('agrupada')}
-                      className={`flex-1 rounded-xl border-[3px] border-black px-4 py-2 ${
-                        vistaMode === 'agrupada' ? 'bg-[#D7ECFF]' : 'bg-[#F3E7D5]'
-                      }`}
-                    >
-                      <Text className="text-center text-xs font-black text-black">
-                        Vista agrupada
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        activeOpacity={0.9}
+                        onPress={() => setVistaMode('agrupada')}
+                        className={`flex-1 rounded-xl border-[3px] border-black px-4 py-2 ${
+                          vistaMode === 'agrupada' ? 'bg-[#D7ECFF]' : 'bg-[#F3E7D5]'
+                        }`}
+                      >
+                        <Text className="text-center text-xs font-black text-black">
+                          Vista agrupada
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
 
                   {loadingReporte ? (
                     <View className="mt-4 items-center">
@@ -635,11 +865,13 @@ export default function Reportes() {
                     </View>
                   ) : (
                     <>
-                      <View className="mt-3 self-start rounded-full border-[3px] border-black bg-[#BDE9C7] px-4 py-1">
-                        <Text className="text-xs font-black text-black">
-                          Toca un estudiante para ver detalle
-                        </Text>
-                      </View>
+                      {!isAndroid && (
+                        <View className="mt-3 self-start rounded-full border-[3px] border-black bg-[#BDE9C7] px-4 py-1">
+                          <Text className="text-xs font-black text-black">
+                            Toca un estudiante para ver detalle
+                          </Text>
+                        </View>
+                      )}
 
                       {vistaMode === 'tabla' ? renderVistaTabla() : renderVistaAgrupada()}
                     </>
