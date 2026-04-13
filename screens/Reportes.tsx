@@ -22,6 +22,9 @@ import {
 } from '@/lib/services/reportesService';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
 import { BREAKPOINTS } from '@/lib/constants/breakpoints';
+import { ClipboardSticker } from '@/components/ClipboardSticker';
+import { MemoSticker } from '@/components/MemoSticker';
+import { GroupSticker } from '@/components/GroupSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Reportes'>;
 type VistaMode = 'tabla' | 'agrupada';
@@ -650,7 +653,7 @@ export default function Reportes() {
             <Pressable className="rounded-[28px] border-[4px] border-black bg-[#FDF9F1] p-5">
               <View className="items-center mb-4">
                 <View className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FDF9F1]">
-                  <Text className="text-3xl">📋</Text>
+                  <ClipboardSticker size={48} />
                 </View>
               </View>
 
@@ -851,15 +854,15 @@ export default function Reportes() {
                     </View>
                   ) : reporte.actividades.length === 0 ? (
                     <View className="mt-4 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-6 items-center">
-                      <Text className="text-4xl mb-2">📝</Text>
-                      <Text className="text-center text-sm font-semibold text-[#5E5045]">
+                      <MemoSticker size={48} />
+                      <Text className="text-center text-sm font-semibold text-[#5E5045] mt-2">
                         Este grupo no tiene actividades configuradas.
                       </Text>
                     </View>
                   ) : reporte.estudiantes.length === 0 ? (
                     <View className="mt-4 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-6 items-center">
-                      <Text className="text-4xl mb-2">👥</Text>
-                      <Text className="text-center text-sm font-semibold text-[#5E5045]">
+                      <GroupSticker size={48} />
+                      <Text className="text-center text-sm font-semibold text-[#5E5045] mt-2">
                         No hay estudiantes matriculados en este grupo.
                       </Text>
                     </View>

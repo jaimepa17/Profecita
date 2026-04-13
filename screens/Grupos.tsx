@@ -15,6 +15,7 @@ import { Grupo, createGrupo, deleteGrupo, listGruposByAsignatura } from '@/lib/s
 import { getGruposStatsByIds, type GrupoStats } from '@/lib/services/statsService';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
+import { GroupSticker } from '@/components/GroupSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Grupos'>;
 type RouteProps = RouteProp<RootStackParamList, 'Grupos'>;
@@ -353,7 +354,7 @@ export default function GruposScreen() {
             renderItem={renderItem}
             ListEmptyComponent={
               <View className="mt-8 items-center px-3">
-                <CustomText className="text-5xl">👥</CustomText>
+                <GroupSticker size={64} />
                 <CustomText className="mt-3 text-center text-xl font-black text-black">
                   Aún no hay grupos creados
                 </CustomText>

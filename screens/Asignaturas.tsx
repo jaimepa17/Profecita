@@ -19,6 +19,7 @@ import { getAsignaturasStatsByIds, type AsignaturaStats } from '@/lib/services/s
 import { Anio } from '@/lib/services/aniosService';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
+import { BrainSticker } from '@/components/BrainSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Asignaturas'>;
 type RouteProps = RouteProp<RootStackParamList, 'Asignaturas'>;
@@ -355,7 +356,7 @@ export default function AsignaturasScreen() {
             renderItem={renderItem}
             ListEmptyComponent={
               <View className="mt-8 items-center px-3">
-                <CustomText className="text-5xl">🧠</CustomText>
+                <BrainSticker size={64} />
                 <CustomText className="mt-3 text-center text-xl font-black text-black">
                   Aún no hay asignaturas creadas
                 </CustomText>

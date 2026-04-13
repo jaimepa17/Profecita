@@ -16,6 +16,7 @@ import CarreraFormModal from '../components/CarreraFormModal';
 import ConfirmActionModal from '../components/ConfirmActionModal';
 import { CatAvatar } from '@/components/CatAvatar';
 import { CatSticker } from '@/components/CatSticker';
+import { NotebookSticker } from '@/components/NotebookSticker';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -450,7 +451,9 @@ export default function Home() {
       <View className="relative w-full">
         <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[32px] bg-black" />
         <View className="items-center rounded-[32px] border-[3px] border-black bg-[#FDF9F1] px-6 py-10">
-          <Text className="text-5xl">📒</Text>
+          <View className="mb-2">
+            <NotebookSticker size={64} />
+          </View>
           <Text className="mt-4 text-center text-2xl font-black text-black">
             Tu libreta está vacía
           </Text>

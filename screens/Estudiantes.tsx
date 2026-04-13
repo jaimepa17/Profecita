@@ -15,6 +15,8 @@ import EstudianteFormModal, {
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
+import { StudentSticker } from '@/components/StudentSticker';
+import { PlantSticker } from '@/components/PlantSticker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { listCarreras, type Carrera } from '@/lib/services/carrerasService';
 import { listAniosByCarrera, type Anio } from '@/lib/services/aniosService';
@@ -643,7 +645,9 @@ export default function EstudiantesScreen() {
                 <View className="relative w-full">
                   <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[32px] bg-black" />
                   <View className="items-center rounded-[32px] border-[3px] border-black bg-[#FDF9F1] px-6 py-10">
-                    <CustomText className="text-5xl">🧑‍🎓</CustomText>
+                    <View className="mb-2">
+                      <StudentSticker size={64} />
+                    </View>
                     <CustomText className="mt-4 text-center text-2xl font-black text-black">
                       Aun no hay estudiantes
                     </CustomText>
@@ -676,7 +680,7 @@ export default function EstudiantesScreen() {
           />
 
           <View className="absolute -bottom-4 -right-2 rotate-[-16deg]">
-            <CustomText className="text-5xl">🌿</CustomText>
+            <PlantSticker size={64} />
           </View>
         </View>
       </View>

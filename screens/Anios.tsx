@@ -13,6 +13,7 @@ import { Anio, createAnio, deleteAnio, listAniosByCarrera } from '@/lib/services
 import { getAniosStatsByIds, type AnioStats } from '@/lib/services/statsService';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
+import { BooksSticker } from '@/components/BooksSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Anios'>;
 type RouteProps = RouteProp<RootStackParamList, 'Anios'>;
@@ -345,7 +346,7 @@ export default function AniosScreen() {
             renderItem={renderItem}
             ListEmptyComponent={
               <View className="mt-8 items-center px-3">
-                <CustomText className="text-5xl">📚</CustomText>
+                <BooksSticker size={64} />
                 <CustomText className="mt-3 text-center text-xl font-black text-black">
                   Aún no hay años creados
                 </CustomText>
