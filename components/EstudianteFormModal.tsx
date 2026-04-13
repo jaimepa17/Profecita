@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 import SelectOptionModal from './SelectOptionModal';
 
 export type EstudianteGroupOption = {
@@ -133,13 +134,13 @@ export default function EstudianteFormModal({
             <View className="relative mb-4">
               <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
               <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
-                <Text className="text-2xl font-black text-black">{resolvedTitle}</Text>
-                <Text className="mt-2 text-sm font-medium text-[#6B5A4A]">{resolvedHelperText}</Text>
+                <CustomText className="text-2xl font-black text-black">{resolvedTitle}</CustomText>
+                <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">{resolvedHelperText}</CustomText>
 
                 <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Nombre completo
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={nombreCompleto}
                     onChangeText={setNombreCompleto}
@@ -154,9 +155,9 @@ export default function EstudianteFormModal({
                 </View>
 
                 <View className="mt-3 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Identificacion (opcional)
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={identificacion}
                     onChangeText={setIdentificacion}
@@ -177,30 +178,30 @@ export default function EstudianteFormModal({
                     onPress={() => setGroupSelectorVisible(true)}
                     className="mt-3 rounded-xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3"
                   >
-                    <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                    <CustomText className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
                       Grupos de asignacion
-                    </Text>
-                    <Text className="mt-1 text-base font-bold text-black">
+                    </CustomText>
+                    <CustomText className="mt-1 text-base font-bold text-black">
                       {selectedGroups.length > 0
                         ? `${selectedGroups.length} grupo(s) seleccionado(s)`
                         : loadingGroups
                           ? 'Cargando grupos...'
                           : 'Seleccionar grupos'}
-                    </Text>
+                    </CustomText>
                     {selectedGroups.slice(0, 3).map((group) => (
-                      <Text key={group.id} className="mt-1 text-xs font-semibold text-[#6B5A4A]">
+                      <CustomText key={group.id} className="mt-1 text-xs font-semibold text-[#6B5A4A]">
                         {`• ${group.label}${group.description ? ` — ${group.description}` : ''}`}
-                      </Text>
+                      </CustomText>
                     ))}
                     {selectedGroups.length > 3 ? (
-                      <Text className="mt-1 text-xs font-semibold text-[#6B5A4A]">
+                      <CustomText className="mt-1 text-xs font-semibold text-[#6B5A4A]">
                         {`+${selectedGroups.length - 3} grupo(s) más`}
-                      </Text>
+                      </CustomText>
                     ) : null}
                   </TouchableOpacity>
                 ) : null}
 
-                {error ? <Text className="mt-3 text-sm font-bold text-[#A6342C]">{error}</Text> : null}
+                {error ? <CustomText className="mt-3 text-sm font-bold text-[#A6342C]">{error}</CustomText> : null}
               </View>
             </View>
 
@@ -212,7 +213,7 @@ export default function EstudianteFormModal({
                 onPress={onClose}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">Cancelar</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cancelar</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -222,9 +223,9 @@ export default function EstudianteFormModal({
                 onPress={handleSubmit}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {submitting ? 'Guardando...' : resolvedSubmitLabel}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </Pressable>

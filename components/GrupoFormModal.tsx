@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type GrupoFormModalProps = {
   visible: boolean;
@@ -51,15 +52,15 @@ export default function GrupoFormModal({
             <View className="relative mb-4">
               <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
               <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
-                <Text className="text-2xl font-black text-black">Nuevo Grupo</Text>
-                <Text className="mt-2 text-sm font-medium text-[#6B5A4A]">
+                <CustomText className="text-2xl font-black text-black">Nuevo Grupo</CustomText>
+                <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">
                   Crea secciones como Grupo A, Grupo B o similares.
-                </Text>
+                </CustomText>
 
                 <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Nombre del grupo
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={nombre}
                     onChangeText={setNombre}
@@ -75,9 +76,9 @@ export default function GrupoFormModal({
                 </View>
 
                 <View className="mt-3 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-2 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-2 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Turno (opcional)
-                  </Text>
+                  </CustomText>
 
                   <View className="mb-2 flex-row flex-wrap gap-2">
                     {TURNOS.map((item) => {
@@ -95,7 +96,7 @@ export default function GrupoFormModal({
                               : 'border-black bg-[#F3E7D5]'
                           }`}
                         >
-                          <Text className="text-xs font-black text-black">{item}</Text>
+                          <CustomText className="text-xs font-black text-black">{item}</CustomText>
                         </TouchableOpacity>
                       );
                     })}
@@ -107,7 +108,7 @@ export default function GrupoFormModal({
                       onPress={() => setTurno('')}
                       className="rounded-full border-[3px] border-black bg-white px-3 py-1.5"
                     >
-                      <Text className="text-xs font-black text-black">Sin turno</Text>
+                      <CustomText className="text-xs font-black text-black">Sin turno</CustomText>
                     </TouchableOpacity>
                   </View>
 
@@ -122,7 +123,7 @@ export default function GrupoFormModal({
                   />
                 </View>
 
-                {error ? <Text className="mt-3 text-sm font-bold text-[#A6342C]">{error}</Text> : null}
+                {error ? <CustomText className="mt-3 text-sm font-bold text-[#A6342C]">{error}</CustomText> : null}
               </View>
             </View>
 
@@ -134,7 +135,7 @@ export default function GrupoFormModal({
                 onPress={onClose}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">Cancelar</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cancelar</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -144,9 +145,9 @@ export default function GrupoFormModal({
                 onPress={handleSubmit}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {submitting ? 'Guardando...' : 'Crear grupo'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </Pressable>

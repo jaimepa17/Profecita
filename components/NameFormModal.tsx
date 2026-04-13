@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type NameFormModalProps = {
   visible: boolean;
@@ -59,15 +60,15 @@ export default function NameFormModal({
             <View className="relative mb-4">
               <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
               <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
-                <Text className="text-2xl font-black text-black">{title}</Text>
+                <CustomText className="text-2xl font-black text-black">{title}</CustomText>
                 {helperText ? (
-                  <Text className="mt-2 text-sm font-medium text-[#6B5A4A]">{helperText}</Text>
+                  <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">{helperText}</CustomText>
                 ) : null}
 
                 <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     {label}
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={nombre}
                     onChangeText={setNombre}
@@ -82,7 +83,7 @@ export default function NameFormModal({
                   />
                 </View>
 
-                {error ? <Text className="mt-3 text-sm font-bold text-[#A6342C]">{error}</Text> : null}
+                {error ? <CustomText className="mt-3 text-sm font-bold text-[#A6342C]">{error}</CustomText> : null}
               </View>
             </View>
 
@@ -94,7 +95,7 @@ export default function NameFormModal({
                 onPress={onClose}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">Cancelar</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cancelar</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -104,9 +105,9 @@ export default function NameFormModal({
                 onPress={handleSubmit}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {submitting ? 'Guardando...' : submitLabel}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </Pressable>

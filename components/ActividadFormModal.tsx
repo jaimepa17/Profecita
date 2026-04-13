@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type ActividadTipo = 'corte' | 'examen';
 
@@ -94,15 +95,15 @@ export default function ActividadFormModal({
             <View className="relative mb-4">
               <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
               <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
-                <Text className="text-2xl font-black text-black">Nueva actividad</Text>
-                <Text className="mt-2 text-sm font-medium text-[#6B5A4A]">
+                <CustomText className="text-2xl font-black text-black">Nueva actividad</CustomText>
+                <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">
                   Configura cortes o examen sin pasar de 100 puntos por parcial.
-                </Text>
+                </CustomText>
 
                 <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Nombre
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={nombre}
                     onChangeText={setNombre}
@@ -116,9 +117,9 @@ export default function ActividadFormModal({
                 </View>
 
                 <View className="mt-3 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-2 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-2 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Tipo
-                  </Text>
+                  </CustomText>
 
                   <View className="flex-row gap-2">
                     <TouchableOpacity
@@ -130,7 +131,7 @@ export default function ActividadFormModal({
                         tipo === 'corte' ? 'border-black bg-[#D7ECFF]' : 'border-black bg-[#F3E7D5]'
                       }`}
                     >
-                      <Text className="text-xs font-black text-black">Corte</Text>
+                      <CustomText className="text-xs font-black text-black">Corte</CustomText>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -142,15 +143,15 @@ export default function ActividadFormModal({
                         tipo === 'examen' ? 'border-black bg-[#FFD98E]' : 'border-black bg-[#F3E7D5]'
                       }`}
                     >
-                      <Text className="text-xs font-black text-black">Examen</Text>
+                      <CustomText className="text-xs font-black text-black">Examen</CustomText>
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 <View className="mt-3 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
-                  <Text className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                  <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Peso
-                  </Text>
+                  </CustomText>
                   <TextInput
                     value={peso}
                     onChangeText={setPeso}
@@ -161,12 +162,12 @@ export default function ActividadFormModal({
                     keyboardType="decimal-pad"
                   />
 
-                  <Text className="mt-2 text-xs font-bold text-[#6B5A4A]">
+                  <CustomText className="mt-2 text-xs font-bold text-[#6B5A4A]">
                     Puntos disponibles: {maxPeso}
-                  </Text>
+                  </CustomText>
                 </View>
 
-                {error ? <Text className="mt-3 text-sm font-bold text-[#A6342C]">{error}</Text> : null}
+                {error ? <CustomText className="mt-3 text-sm font-bold text-[#A6342C]">{error}</CustomText> : null}
               </View>
             </View>
 
@@ -178,7 +179,7 @@ export default function ActividadFormModal({
                 onPress={onClose}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">Cancelar</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cancelar</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -188,9 +189,9 @@ export default function ActividadFormModal({
                 onPress={handleSubmit}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {submitting ? 'Guardando...' : 'Crear actividad'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </Pressable>

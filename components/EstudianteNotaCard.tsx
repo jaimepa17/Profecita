@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { TextInput, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 import {
   createNota,
   deleteNota,
@@ -213,17 +214,17 @@ export default function EstudianteNotaCard({
         }}
       />
 
-      <Text className="text-sm font-black text-black">{estudiante.nombre_completo}</Text>
+      <CustomText className="text-sm font-black text-black">{estudiante.nombre_completo}</CustomText>
 
       {!isEditing && notaExistente ? (
         <>
           <View className="mt-2 rounded-xl border-[3px] border-black bg-white px-3 py-2">
-            <Text className="text-base font-black text-black">
+            <CustomText className="text-base font-black text-black">
               {roundTo2(Number(notaExistente.puntaje_obtenido))}
-            </Text>
-            <Text className="mt-1 text-xs font-semibold text-[#6B5A4A]">
+            </CustomText>
+            <CustomText className="mt-1 text-xs font-semibold text-[#6B5A4A]">
               Nota registrada de {maxPuntaje}
-            </Text>
+            </CustomText>
           </View>
 
           <View className="mt-3 flex-row gap-2">
@@ -233,7 +234,7 @@ export default function EstudianteNotaCard({
               onPress={abrirEdicion}
               className="rounded-xl border-[3px] border-black bg-[#D7ECFF] px-4 py-2"
             >
-              <Text className="text-sm font-black text-black">Editar</Text>
+              <CustomText className="text-sm font-black text-black">Editar</CustomText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -243,9 +244,9 @@ export default function EstudianteNotaCard({
               onPress={eliminarNota}
               className="rounded-xl border-[3px] border-black bg-[#FFC9C2] px-4 py-2"
             >
-              <Text className="text-sm font-black text-black">
+              <CustomText className="text-sm font-black text-black">
                 {isDeleting(estudiante.id) ? 'Eliminando...' : 'Eliminar'}
-              </Text>
+              </CustomText>
             </TouchableOpacity>
           </View>
         </>
@@ -276,9 +277,9 @@ export default function EstudianteNotaCard({
               }}
               className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
             >
-              <Text className="text-sm font-black text-black">
+              <CustomText className="text-sm font-black text-black">
                 {isSaving(estudiante.id) ? 'Guardando...' : notaExistente ? 'Guardar cambios' : 'Registrar nota'}
-              </Text>
+              </CustomText>
             </TouchableOpacity>
 
             {notaExistente ? (
@@ -288,7 +289,7 @@ export default function EstudianteNotaCard({
                 onPress={cancelarEdicion}
                 className="rounded-xl border-[3px] border-black bg-white px-4 py-2"
               >
-                <Text className="text-sm font-black text-black">Cancelar</Text>
+                <CustomText className="text-sm font-black text-black">Cancelar</CustomText>
               </TouchableOpacity>
             ) : null}
           </View>
