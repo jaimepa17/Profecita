@@ -1,4 +1,5 @@
-import { Linking, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type PrivacyPolicyCardProps = {
   visible: boolean;
@@ -39,28 +40,28 @@ export default function PrivacyPolicyCard({
             <View className="relative">
               <View className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-[20px] bg-black" />
               <View className="rounded-[20px] border-[3px] border-black bg-[#FFF7E8] px-4 py-4">
-                <Text className="text-xl font-black text-black">Política de Privacidad</Text>
-                <Text className="mt-1 text-xs font-semibold text-[#7A6857]">
+                <CustomText className="text-xl font-black text-black">Política de Privacidad</CustomText>
+                <CustomText className="mt-1 text-xs font-semibold text-[#7A6857]">
                   Resumen claro para el registro en Profecita.
-                </Text>
+                </CustomText>
 
                 <ScrollView className="mt-3 max-h-64" showsVerticalScrollIndicator={false}>
                   <View className="gap-2">
-                    <Text className="text-sm font-semibold leading-5 text-[#5F5146]">
+                    <CustomText className="text-sm font-semibold leading-5 text-[#5F5146]">
                       • Solo pedimos los datos necesarios para autenticarte (correo y contraseña).
-                    </Text>
-                    <Text className="text-sm font-semibold leading-5 text-[#5F5146]">
+                    </CustomText>
+                    <CustomText className="text-sm font-semibold leading-5 text-[#5F5146]">
                       • Usamos Supabase para almacenamiento seguro y funcionamiento de la app.
-                    </Text>
-                    <Text className="text-sm font-semibold leading-5 text-[#5F5146]">
+                    </CustomText>
+                    <CustomText className="text-sm font-semibold leading-5 text-[#5F5146]">
                       • No vendemos tus datos ni los compartimos con terceros fuera del servicio.
-                    </Text>
-                    <Text className="text-sm font-semibold leading-5 text-[#5F5146]">
+                    </CustomText>
+                    <CustomText className="text-sm font-semibold leading-5 text-[#5F5146]">
                       • Puedes solicitar acceso, corrección o eliminación de tu cuenta.
-                    </Text>
-                    <Text className="text-sm font-semibold leading-5 text-[#5F5146]">
+                    </CustomText>
+                    <CustomText className="text-sm font-semibold leading-5 text-[#5F5146]">
                       • Al aceptar, autorizas el tratamiento de datos para usar esta plataforma educativa.
-                    </Text>
+                    </CustomText>
                   </View>
                 </ScrollView>
               </View>
@@ -72,7 +73,7 @@ export default function PrivacyPolicyCard({
               onPress={openPolicy}
               className="mt-4 rounded-xl border-[3px] border-black bg-white px-4 py-3"
             >
-              <Text className="text-center text-sm font-black text-black">Leer política completa</Text>
+              <CustomText className="text-center text-sm font-black text-black">Leer política completa</CustomText>
             </TouchableOpacity>
 
             <View className="mt-3 flex-row gap-3">
@@ -82,7 +83,7 @@ export default function PrivacyPolicyCard({
                 onPress={onClose}
                 className="flex-1 rounded-xl border-[3px] border-black bg-white px-4 py-3"
               >
-                <Text className="text-center text-sm font-black text-black">Cerrar</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cerrar</CustomText>
               </TouchableOpacity>
 
               {showAccept ? (
@@ -92,7 +93,7 @@ export default function PrivacyPolicyCard({
                   onPress={onAccept}
                   className="flex-1 rounded-xl border-[3px] border-black bg-[#FFD98E] px-4 py-3"
                 >
-                  <Text className="text-center text-sm font-black text-black">Aceptar y continuar</Text>
+                  <CustomText className="text-center text-sm font-black text-black">Aceptar y continuar</CustomText>
                 </TouchableOpacity>
               ) : null}
             </View>

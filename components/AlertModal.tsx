@@ -1,4 +1,5 @@
-import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 export type AlertModalType = 'success' | 'error' | 'warning' | 'info';
 
@@ -49,14 +50,14 @@ export default function AlertModal({ visible, payload, onClose }: AlertModalProp
                   <View
                     className={`h-8 w-8 items-center justify-center rounded-full border-[3px] border-black ${chipByType[payload.type]}`}
                   >
-                    <Text className="text-base font-black text-black">{iconByType[payload.type]}</Text>
+                    <CustomText className="text-base font-black text-black">{iconByType[payload.type]}</CustomText>
                   </View>
-                  <Text className="flex-1 text-xl font-black text-black">{payload.title}</Text>
+                  <CustomText className="flex-1 text-xl font-black text-black">{payload.title}</CustomText>
                 </View>
 
-                <Text className="mt-3 text-sm font-semibold leading-5 text-[#5F5146]">
+                <CustomText className="mt-3 text-sm font-semibold leading-5 text-[#5F5146]">
                   {payload.message}
-                </Text>
+                </CustomText>
               </View>
             </View>
 
@@ -66,9 +67,9 @@ export default function AlertModal({ visible, payload, onClose }: AlertModalProp
               onPress={onClose}
               className={`mt-4 rounded-xl border-[3px] border-black px-4 py-3 ${buttonByType[payload.type]}`}
             >
-              <Text className="text-center text-sm font-black text-black">
+              <CustomText className="text-center text-sm font-black text-black">
                 {payload.buttonLabel ?? 'Entendido'}
-              </Text>
+              </CustomText>
             </TouchableOpacity>
           </Pressable>
         </View>

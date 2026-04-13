@@ -1,4 +1,5 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type NotificationType = 'success' | 'warning' | 'error';
 
@@ -29,9 +30,9 @@ export default function NotificationBar({
     <View className="absolute top-10 left-4 right-4 z-50">
       <View className={`rounded-xl px-4 py-3 shadow-md ${containerByType[type]}`}>
         <View className="flex-row items-start justify-between gap-3">
-          <Text className="text-white text-sm flex-1 leading-5">{message}</Text>
+          <CustomText className="text-white text-sm flex-1 leading-5">{message}</CustomText>
           <TouchableOpacity onPress={onClose} accessibilityRole="button" hitSlop={10}>
-            <Text className="text-white font-bold text-base">X</Text>
+            <CustomText className="text-white font-bold text-base">X</CustomText>
           </TouchableOpacity>
         </View>
       </View>

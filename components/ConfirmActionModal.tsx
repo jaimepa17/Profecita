@@ -1,4 +1,5 @@
-import { Modal, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, TouchableOpacity, View } from 'react-native';
+import { CustomText } from './CustomText';
 
 type ConfirmActionModalProps = {
   visible: boolean;
@@ -29,10 +30,10 @@ export default function ConfirmActionModal({
             <View className="relative">
               <View className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-[20px] bg-black" />
               <View className="rounded-[20px] border-[3px] border-black bg-[#FFF7E8] px-4 py-4">
-                <Text className="text-xl font-black text-black">{title}</Text>
-                <Text className="mt-2 text-sm font-semibold leading-5 text-[#5F5146]">
+                <CustomText className="text-xl font-black text-black">{title}</CustomText>
+                <CustomText className="mt-2 text-sm font-semibold leading-5 text-[#5F5146]">
                   {message}
-                </Text>
+                </CustomText>
               </View>
             </View>
 
@@ -44,7 +45,7 @@ export default function ConfirmActionModal({
                 disabled={loading}
                 className="flex-1 rounded-xl border-[3px] border-black bg-white px-4 py-3"
               >
-                <Text className="text-center text-sm font-black text-black">{cancelLabel}</Text>
+                <CustomText className="text-center text-sm font-black text-black">{cancelLabel}</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -54,9 +55,9 @@ export default function ConfirmActionModal({
                 disabled={loading}
                 className="flex-1 rounded-xl border-[3px] border-black bg-[#FFC9C2] px-4 py-3"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {loading ? 'Procesando...' : confirmLabel}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </Pressable>
