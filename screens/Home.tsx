@@ -14,6 +14,8 @@ import type { RootStackParamList } from '@/types/navigation';
 import AccountPanel from '../components/AccountPanel';
 import CarreraFormModal from '../components/CarreraFormModal';
 import ConfirmActionModal from '../components/ConfirmActionModal';
+import { CatAvatar } from '@/components/CatAvatar';
+import { CatSticker } from '@/components/CatSticker';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -588,7 +590,7 @@ export default function Home() {
           >
             <View className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-full bg-black" />
             <View className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FDF9F1]">
-              <Text className="text-3xl">🐱</Text>
+              <CatAvatar size={48} />
             </View>
           </TouchableOpacity>
         </View>
@@ -622,7 +624,7 @@ export default function Home() {
           />
 
           <View className="absolute -bottom-4 -right-2 rotate-[-16deg]">
-            <Text className="text-5xl">🐈</Text>
+            <CatSticker size={64} />
           </View>
         </View>
       </View>

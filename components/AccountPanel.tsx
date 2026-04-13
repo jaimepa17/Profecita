@@ -1,5 +1,6 @@
-import React from 'react';
-import { Modal, Pressable, View, Text, TouchableOpacity } from 'react-native';
+import { Modal, Pressable, View, TouchableOpacity } from 'react-native';
+import { CustomText } from './CustomText';
+import { CatAvatar } from './CatAvatar';
 
 type Props = {
   visible: boolean;
@@ -32,17 +33,17 @@ export default function AccountPanel({
               <View className="rounded-[30px] border-[3px] border-black bg-[#FFF7E8] p-5">
                 <View className="flex-row items-center">
                   <View className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FDF9F1]">
-                    <Text className="text-3xl">🐱</Text>
+                    <CatAvatar size={48} />
                   </View>
 
                   <View className="ml-4 flex-1">
-                    <Text className="text-2xl font-black text-black">Mi cuenta</Text>
-                    <Text className="mt-1 text-base font-semibold text-[#5E5045]">
+                    <CustomText className="text-2xl font-black text-black">Mi cuenta</CustomText>
+                    <CustomText className="mt-1 text-base font-semibold text-[#5E5045]">
                       {userEmail ?? 'Usuario autenticado'}
-                    </Text>
-                    <Text className="mt-2 text-sm font-medium text-[#7A6857]">
+                    </CustomText>
+                    <CustomText className="mt-2 text-sm font-medium text-[#7A6857]">
                       Avatar provisional. Luego podrás subir tu foto.
-                    </Text>
+                    </CustomText>
                   </View>
                 </View>
               </View>
@@ -51,30 +52,30 @@ export default function AccountPanel({
             <View className="relative mb-4">
               <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
               <View className="rounded-[28px] border-[3px] border-black bg-[#F7E7C6] p-5">
-                <Text className="text-xs font-bold uppercase tracking-wide text-[#6B5747]">
+                <CustomText className="text-xs font-bold uppercase tracking-wide text-[#6B5747]">
                   Opciones de cuenta
-                </Text>
+                </CustomText>
 
                 <View className="mt-4 gap-3">
                   <View className="rounded-2xl border-[3px] border-black bg-[#D9F2C7] px-4 py-4">
-                    <Text className="text-base font-black text-black">Perfil del profesor</Text>
-                    <Text className="mt-1 text-sm font-medium text-[#4C5B42]">
+                    <CustomText className="text-base font-black text-black">Perfil del profesor</CustomText>
+                    <CustomText className="mt-1 text-sm font-medium text-[#4C5B42]">
                       Visualiza tu nombre, correo y futura foto de perfil.
-                    </Text>
+                    </CustomText>
                   </View>
 
                   <View className="rounded-2xl border-[3px] border-black bg-[#D7ECFF] px-4 py-4">
-                    <Text className="text-base font-black text-black">Configuraciones avanzadas</Text>
-                    <Text className="mt-1 text-sm font-medium text-[#44596A]">
+                    <CustomText className="text-base font-black text-black">Configuraciones avanzadas</CustomText>
+                    <CustomText className="mt-1 text-sm font-medium text-[#44596A]">
                       Apariencia, notificaciones, seguridad y preferencias. Solo visual por ahora.
-                    </Text>
+                    </CustomText>
                   </View>
 
                   <View className="rounded-2xl border-dashed border-black bg-[#FFE7BD] px-4 py-4">
-                    <Text className="text-base font-black text-black">Próximamente</Text>
-                    <Text className="mt-1 text-sm font-medium text-[#6E5735]">
+                    <CustomText className="text-base font-black text-black">Próximamente</CustomText>
+                    <CustomText className="mt-1 text-sm font-medium text-[#6E5735]">
                       Cambiar avatar, editar nombre y administrar sesiones activas.
-                    </Text>
+                    </CustomText>
                   </View>
                 </View>
               </View>
@@ -88,9 +89,9 @@ export default function AccountPanel({
                 activeOpacity={0.9}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#A7D8FF] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">
+                <CustomText className="text-center text-sm font-black text-black">
                   {signingOut ? 'Procesando...' : 'Cambiar cuenta'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -100,7 +101,7 @@ export default function AccountPanel({
                 activeOpacity={0.9}
                 className="flex-1 rounded-2xl border-[3px] border-black bg-[#FFC9C2] px-4 py-4"
               >
-                <Text className="text-center text-sm font-black text-black">Cerrar sesión</Text>
+                <CustomText className="text-center text-sm font-black text-black">Cerrar sesión</CustomText>
               </TouchableOpacity>
             </View>
 
@@ -110,7 +111,7 @@ export default function AccountPanel({
               onPress={onRequestClose}
               className="mt-4 self-center rounded-full border-[3px] border-black bg-white px-5 py-2"
             >
-              <Text className="text-sm font-black text-black">Cerrar panel</Text>
+              <CustomText className="text-sm font-black text-black">Cerrar panel</CustomText>
             </TouchableOpacity>
           </Pressable>
         </View>

@@ -14,6 +14,8 @@ import NotificationBar from '@/components/NotificationBar';
 import PrivacyPolicyCard from '@/components/PrivacyPolicyCard';
 import { checkSupabaseAuthHealth } from '@/lib/serviceMonitor';
 import { useSingleFlight } from '@/lib/hooks/useSingleFlight';
+import { BasketSticker } from '@/components/BasketSticker';
+import { PlantSticker } from '@/components/PlantSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Auth'>;
 
@@ -205,7 +207,7 @@ export default function Auth() {
             {/* Main Content wrapper with z-index to stay above lines */}
             <View className="z-10 relative">
               <View className="absolute -top-16 right-2 z-40 items-center bg-[#F7F0E4] rounded-[20px] px-2 pt-1 -rotate-[8deg]">
-                <Text className="text-5xl">🧺</Text>
+                <BasketSticker size={52} />
               </View>
 
               <Text className="text-[32px] font-black tracking-tighter text-[#1E140D] mt-2 text">
@@ -351,7 +353,7 @@ export default function Auth() {
               />
               
               <View className="absolute -bottom-12 -left-3 z-40 items-center rotate-[16deg] opacity-95">
-                <Text className="text-5xl">🪴</Text>
+                <PlantSticker size={52} />
               </View>
             </View>
           </View>
