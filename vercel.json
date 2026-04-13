@@ -1,0 +1,16 @@
+{
+  "build": {
+    "env": {
+      "EXPO_PUBLIC_DIR": "public"
+    }
+  },
+  "routes": [
+    {
+      "src": "/politicas",
+      "status": 302,
+      "headers": {
+        "Location": "/politicas.html"
+      }
+    }
+  ]
+}
