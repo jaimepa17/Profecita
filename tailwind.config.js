@@ -11,7 +11,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        fredoka: ['Fredoka_400Regular', 'Fredoka', 'sans-serif'],
+        fredoka: ['Fredoka', 'sans-serif'],
+        'fredoka-bold': ['Fredoka-Bold', 'sans-serif'],
       },
     },
   },

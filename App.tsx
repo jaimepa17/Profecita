@@ -1,16 +1,12 @@
 import './global.css';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, LogBox, Platform } from 'react-native';
+import { View, ActivityIndicator, LogBox } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from './lib/supabase';
 import RootNavigatorStack from './navigation/RootNavigatorStack';
-import {
-  useFonts,
-  Fredoka_400Regular,
-  Fredoka_500Medium,
-  Fredoka_700Bold,
-} from '@expo-google-fonts/fredoka';
+import { useFonts } from 'expo-font';
+import { Fredoka_400Regular, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 
 LogBox.ignoreLogs(['InteractionManager has been deprecated']);
 
@@ -18,23 +14,14 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [fontsLoaded] = useFonts({
-    Fredoka_400Regular,
-    Fredoka_500Medium,
-    Fredoka_700Bold,
+    Fredoka: Fredoka_400Regular,
+    'Fredoka-Bold': Fredoka_700Bold,
   });
 
   useEffect(() => {
     if (!fontsLoaded) {
       return;
     }
-
-    if ((Text as any).defaultProps == null) {
-      (Text as any).defaultProps = {};
-    }
-    (Text as any).defaultProps.style = {
-      ...(Text as any).defaultProps.style || {},
-      fontFamily: 'Fredoka_400Regular',
-    };
 
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
       console.log('[APP] Session inicial:', currentSession ? 'autenticado' : 'no autenticado');
