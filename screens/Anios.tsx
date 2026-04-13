@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, TouchableOpacity, View } from 'react-native';
+import { CustomText } from '../components/CustomText';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -193,26 +194,26 @@ export default function AniosScreen() {
           <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[24px] bg-black" />
           <View className="rounded-[24px] border-[3px] border-black bg-[#FDF9F1] p-5">
             <View className="rounded-full self-start border-[3px] border-black bg-[#D7ECFF] px-3 py-1">
-              <Text className="text-xs font-black text-black">AÑO</Text>
+              <CustomText className="text-xs font-black text-black">AÑO</CustomText>
             </View>
 
-            <Text className="mt-3 text-xl font-black text-black">{title}</Text>
+            <CustomText className="mt-3 text-xl font-black text-black">{title}</CustomText>
 
             <View className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-              <Text className="text-xs font-bold uppercase tracking-wide text-[#7A6857]">
+              <CustomText className="text-xs font-bold uppercase tracking-wide text-[#7A6857]">
                 Información del año
-              </Text>
+              </CustomText>
 
               {showStatsLoading ? (
-                <Text className="mt-1 text-base font-semibold text-black">Cargando datos...</Text>
+                <CustomText className="mt-1 text-base font-semibold text-black">Cargando datos...</CustomText>
               ) : (
                 <>
-                  <Text className="mt-1 text-base font-semibold text-black">
+                  <CustomText className="mt-1 text-base font-semibold text-black">
                     {`Asignaturas: ${stats?.asignaturas ?? 0}  •  Grupos: ${stats?.grupos ?? 0}`}
-                  </Text>
-                  <Text className="mt-1 text-base font-semibold text-black">
+                  </CustomText>
+                  <CustomText className="mt-1 text-base font-semibold text-black">
                     {`Estudiantes: ${stats?.estudiantes ?? 0}`}
-                  </Text>
+                  </CustomText>
                 </>
               )}
             </View>
@@ -224,7 +225,7 @@ export default function AniosScreen() {
                 onPress={() => navigation.navigate('Asignaturas', { carrera, anio: item })}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
-                <Text className="text-sm font-black text-black">Ver asignaturas</Text>
+                <CustomText className="text-sm font-black text-black">Ver asignaturas</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -234,9 +235,9 @@ export default function AniosScreen() {
                 onPress={() => setPendingDelete(item)}
                 className="rounded-xl border-[3px] border-black bg-[#FFC9C2] px-4 py-2"
               >
-                <Text className="text-sm font-black text-black">
+                <CustomText className="text-sm font-black text-black">
                   {deleting ? 'Eliminando...' : 'Eliminar'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </View>
@@ -258,9 +259,9 @@ export default function AniosScreen() {
                 onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
-                <Text className="text-xs font-black text-black">← Volver</Text>
+                <CustomText className="text-xs font-black text-black">← Volver</CustomText>
               </TouchableOpacity>
-              <Text className="mt-3 text-2xl font-black text-[#1E140D]">Años de {carrera.nombre}</Text>
+              <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Años de {carrera.nombre}</CustomText>
             </View>
           </View>
         </View>
@@ -320,9 +321,9 @@ export default function AniosScreen() {
               onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
-              <Text className="text-xs font-black text-black">← Volver</Text>
+              <CustomText className="text-xs font-black text-black">← Volver</CustomText>
             </TouchableOpacity>
-            <Text className="mt-3 text-2xl font-black text-[#1E140D]">Años de {carrera.nombre}</Text>
+            <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Años de {carrera.nombre}</CustomText>
           </View>
         </View>
       </View>
@@ -334,7 +335,7 @@ export default function AniosScreen() {
 
           <View className="px-5 pt-4">
             <View className="self-start rounded-full border-[3px] border-black bg-[#F3E7D5] px-5 py-2">
-              <Text className="text-sm font-black text-black">{`Años listados: ${anios.length}`}</Text>
+              <CustomText className="text-sm font-black text-black">{`Años listados: ${anios.length}`}</CustomText>
             </View>
           </View>
 
@@ -344,10 +345,10 @@ export default function AniosScreen() {
             renderItem={renderItem}
             ListEmptyComponent={
               <View className="mt-8 items-center px-3">
-                <Text className="text-5xl">📚</Text>
-                <Text className="mt-3 text-center text-xl font-black text-black">
+                <CustomText className="text-5xl">📚</CustomText>
+                <CustomText className="mt-3 text-center text-xl font-black text-black">
                   Aún no hay años creados
-                </Text>
+                </CustomText>
                 <TouchableOpacity
                   accessibilityRole="button"
                   activeOpacity={0.9}
@@ -355,7 +356,7 @@ export default function AniosScreen() {
                   onPress={() => setCreateVisible(true)}
                   className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
                 >
-                  <Text className="text-base font-black text-black">+ Crear primer año</Text>
+                  <CustomText className="text-base font-black text-black">+ Crear primer año</CustomText>
                 </TouchableOpacity>
               </View>
             }
@@ -380,7 +381,7 @@ export default function AniosScreen() {
             onPress={() => setCreateVisible(true)}
             className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FFB6C9]"
           >
-            <Text className="text-4xl font-black text-black">+</Text>
+            <CustomText className="text-4xl font-black text-black">+</CustomText>
           </TouchableOpacity>
         </View>
       ) : null}

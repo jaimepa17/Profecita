@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { CustomText } from '../components/CustomText';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -555,9 +556,9 @@ export default function ParcialesConfigScreen() {
             onPress={seleccionarParcial}
             className="flex-1 pr-2"
           >
-            <Text className="text-base font-black text-black">
+            <CustomText className="text-base font-black text-black">
               {item.nombre?.trim() || `Parcial ${index + 1}`}
-            </Text>
+            </CustomText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -567,9 +568,9 @@ export default function ParcialesConfigScreen() {
             onPress={() => setPendingDelete({ kind: 'parcial', parcial: item })}
             className="rounded-full border-[3px] border-black bg-[#FFC9C2] px-3 py-1"
           >
-            <Text className="text-xs font-black text-black">
+            <CustomText className="text-xs font-black text-black">
               {isDeletingById(item.id) ? '...' : 'Eliminar'}
-            </Text>
+            </CustomText>
           </TouchableOpacity>
         </View>
 
@@ -579,13 +580,13 @@ export default function ParcialesConfigScreen() {
           onPress={seleccionarParcial}
           className="mt-3 rounded-2xl border-[3px] border-black bg-white px-3 py-2"
         >
-          <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">Valor por parcial</Text>
+          <CustomText className="text-xs font-black uppercase tracking-wide text-[#7A6857]">Valor por parcial</CustomText>
           <View className="mt-2">
-            <Text className="text-sm font-black text-black">{pesoActual}%</Text>
-            <Text className="mt-1 text-xs text-[#5E5045]">(ajustado automáticamente)</Text>
-            <Text className="mt-1 text-xs font-bold text-[#5E5045]">
+            <CustomText className="text-sm font-black text-black">{pesoActual}%</CustomText>
+            <CustomText className="mt-1 text-xs text-[#5E5045]">(ajustado automáticamente)</CustomText>
+            <CustomText className="mt-1 text-xs font-bold text-[#5E5045]">
               Bloques: {resumenParcial?.bloques ?? 0} • Actividades: {resumenParcial?.actividades ?? 0}
-            </Text>
+            </CustomText>
           </View>
         </TouchableOpacity>
       </View>
@@ -601,17 +602,17 @@ export default function ParcialesConfigScreen() {
         <View className="rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-2">
-              <Text className="text-base font-black text-black">
+              <CustomText className="text-base font-black text-black">
                 {item.nombre?.trim() || `Actividad ${index + 1}`}
-              </Text>
-              <Text className="mt-1 text-sm font-semibold text-[#5E5045]">
+              </CustomText>
+              <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
                 Peso: {roundTo2(Number(item.peso_porcentaje ?? 0))} pts
-              </Text>
+              </CustomText>
             </View>
 
             <View className="items-end gap-2">
               <View className={`rounded-full border-[3px] border-black px-3 py-1 ${chipColor}`}>
-                <Text className="text-xs font-black text-black">{tipoLabel}</Text>
+                <CustomText className="text-xs font-black text-black">{tipoLabel}</CustomText>
               </View>
 
               <TouchableOpacity
@@ -621,9 +622,9 @@ export default function ParcialesConfigScreen() {
                 onPress={() => setPendingDelete({ kind: 'actividad', actividad: item })}
                 className="rounded-full border-[3px] border-black bg-[#FFC9C2] px-3 py-1"
               >
-                <Text className="text-xs font-black text-black">
+                <CustomText className="text-xs font-black text-black">
                   {isDeletingById(item.id) ? '...' : 'Eliminar'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </View>
@@ -729,14 +730,14 @@ export default function ParcialesConfigScreen() {
               onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
-              <Text className="text-xs font-black text-black">← Volver</Text>
+              <CustomText className="text-xs font-black text-black">← Volver</CustomText>
             </TouchableOpacity>
 
-            <Text className="mt-3 text-2xl font-black text-[#1E140D]">Configurar notas</Text>
-            <Text className="mt-1 text-sm font-semibold text-[#5E5045]">
+            <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Configurar notas</CustomText>
+            <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
               {`${carrera.nombre} • ${anio.nombre} • ${asignatura.nombre}`}
-            </Text>
-            <Text className="mt-1 text-sm font-semibold text-[#5E5045]">Grupo: {grupo.nombre}</Text>
+            </CustomText>
+            <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">Grupo: {grupo.nombre}</CustomText>
           </View>
         </View>
       </View>
@@ -748,7 +749,7 @@ export default function ParcialesConfigScreen() {
 
           <View className="px-5 pt-4">
             <View className="self-start rounded-full border-[3px] border-black bg-[#F3E7D5] px-5 py-2">
-              <Text className="text-sm font-black text-black">Configuración de parciales y actividades</Text>
+              <CustomText className="text-sm font-black text-black">Configuración de parciales y actividades</CustomText>
             </View>
           </View>
 
@@ -763,7 +764,7 @@ export default function ParcialesConfigScreen() {
                   <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[24px] bg-black" />
                   <View className="rounded-[24px] border-[3px] border-black bg-[#FDF9F1] p-4">
                     <View className="mb-3 flex-row items-center justify-between">
-                      <Text className="text-lg font-black text-black">Parciales del grupo</Text>
+                      <CustomText className="text-lg font-black text-black">Parciales del grupo</CustomText>
 
                       <TouchableOpacity
                         accessibilityRole="button"
@@ -772,24 +773,24 @@ export default function ParcialesConfigScreen() {
                         onPress={() => setCreateParcialVisible(true)}
                         className="rounded-xl border-[3px] border-black bg-[#FFD98E] px-3 py-2 pl-1"
                       >
-                        <Text className="text-xs font-black text-black">+ Nuevo parcial</Text>
+                        <CustomText className="text-xs font-black text-black">+ Nuevo parcial</CustomText>
                       </TouchableOpacity>
                     </View>
 
                     <View className="mb-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                      <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                      <CustomText className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
                         Avance de parciales del grupo
-                      </Text>
-                      <Text className="mt-1 text-sm font-bold text-[#5E5045]">
+                      </CustomText>
+                      <CustomText className="mt-1 text-sm font-bold text-[#5E5045]">
                         Suma actual: {sumaParciales} / 100
-                      </Text>
-                      <Text className="mt-1 text-sm font-bold text-[#5E5045]">
+                      </CustomText>
+                      <CustomText className="mt-1 text-sm font-bold text-[#5E5045]">
                         Disponible: {pesoParcialesDisponible}
-                      </Text>
+                      </CustomText>
                       <View className="mt-2 self-start rounded-full border-[3px] border-black bg-[#D7ECFF] px-3 py-1">
-                        <Text className="text-xs font-black text-black">
+                        <CustomText className="text-xs font-black text-black">
                           {parcialesCompletos ? 'Parciales configurados al 100%' : 'Parciales incompletos'}
-                        </Text>
+                        </CustomText>
                       </View>
                     </View>
 
@@ -798,9 +799,9 @@ export default function ParcialesConfigScreen() {
                         <View key={item.id}>{renderParcial({ item, index })}</View>
                       ))
                     ) : (
-                      <Text className="text-sm font-semibold text-[#5E5045]">
+                      <CustomText className="text-sm font-semibold text-[#5E5045]">
                         Aún no hay parciales. Crea al menos uno para empezar a configurar actividades.
-                      </Text>
+                      </CustomText>
                     )}
                   </View>
                 </View>
@@ -808,18 +809,18 @@ export default function ParcialesConfigScreen() {
                 <View className="relative">
                   <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[24px] bg-black" />
                   <View className="rounded-[24px] border-[3px] border-black bg-[#FDF9F1] p-4">
-                    <Text className="text-lg font-black text-black">Actividades del parcial seleccionado</Text>
+                    <CustomText className="text-lg font-black text-black">Actividades del parcial seleccionado</CustomText>
 
                     {!parcialSeleccionado ? (
-                      <Text className="mt-3 text-sm font-semibold text-[#5E5045]">
+                      <CustomText className="mt-3 text-sm font-semibold text-[#5E5045]">
                         Selecciona o crea un parcial para comenzar.
-                      </Text>
+                      </CustomText>
                     ) : (
                       <>
                         <View className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                          <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                          <CustomText className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
                             Bloques del parcial
-                          </Text>
+                          </CustomText>
 
                           {bloques.length > 0 ? (
                             <View className="mt-2 gap-2">
@@ -842,9 +843,9 @@ export default function ParcialesConfigScreen() {
                                         active ? 'border-black bg-[#D7ECFF]' : 'border-black bg-[#F3E7D5]'
                                       }`}
                                     >
-                                      <Text className="text-xs font-black text-black">
+                                      <CustomText className="text-xs font-black text-black">
                                         {(bloque.nombre?.trim() || 'Bloque')} ({peso}%)
-                                      </Text>
+                                      </CustomText>
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
@@ -854,18 +855,18 @@ export default function ParcialesConfigScreen() {
                                       onPress={() => setPendingDelete({ kind: 'bloque', bloque })}
                                       className="rounded-full border-[3px] border-black bg-[#FFC9C2] px-3 py-1"
                                     >
-                                      <Text className="text-xs font-black text-black">
+                                      <CustomText className="text-xs font-black text-black">
                                         {isDeletingById(bloque.id) ? '...' : 'Eliminar'}
-                                      </Text>
+                                      </CustomText>
                                     </TouchableOpacity>
                                   </View>
                                 );
                               })}
                             </View>
                           ) : (
-                            <Text className="mt-2 text-sm font-semibold text-[#5E5045]">
+                            <CustomText className="mt-2 text-sm font-semibold text-[#5E5045]">
                               Este parcial aún no tiene bloques.
-                            </Text>
+                            </CustomText>
                           )}
 
                           <TouchableOpacity
@@ -877,36 +878,36 @@ export default function ParcialesConfigScreen() {
                             }}
                             className="mt-3 self-start rounded-xl border-[3px] border-black bg-[#FFD98E] px-4 py-2"
                           >
-                            <Text className="text-sm font-black text-black">+ Nuevo bloque</Text>
+                            <CustomText className="text-sm font-black text-black">+ Nuevo bloque</CustomText>
                           </TouchableOpacity>
                         </View>
 
                         <View className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-                          <Text className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
+                          <CustomText className="text-xs font-black uppercase tracking-wide text-[#7A6857]">
                             Bloque seleccionado
-                          </Text>
-                          <Text className="mt-1 text-base font-black text-black">
+                          </CustomText>
+                          <CustomText className="mt-1 text-base font-black text-black">
                             {bloqueSeleccionado?.nombre ?? 'Sin bloque seleccionado'}
-                          </Text>
+                          </CustomText>
 
-                          <Text className="mt-2 text-sm font-bold text-[#5E5045]">
+                          <CustomText className="mt-2 text-sm font-bold text-[#5E5045]">
                             Suma actual: {sumaActual} / 100
-                          </Text>
-                          <Text className="mt-1 text-sm font-bold text-[#5E5045]">
+                          </CustomText>
+                          <CustomText className="mt-1 text-sm font-bold text-[#5E5045]">
                             Puntos disponibles: {puntosDisponibles}
-                          </Text>
+                          </CustomText>
 
                           <View className="mt-3 self-start rounded-full border-[3px] border-black bg-[#D7ECFF] px-3 py-1">
-                            <Text className="text-xs font-black text-black">
+                            <CustomText className="text-xs font-black text-black">
                               {estadoCompletado ? 'Configurado al 100%' : 'Incompleto'}
-                            </Text>
+                            </CustomText>
                           </View>
                         </View>
 
                         {bloques.length === 0 ? (
-                          <Text className="mt-3 text-sm font-bold text-[#1E140D]">
+                          <CustomText className="mt-3 text-sm font-bold text-[#1E140D]">
                             Primero crea un bloque para habilitar el registro de actividades.
-                          </Text>
+                          </CustomText>
                         ) : !estadoCompletado ? (
                           <TouchableOpacity
                             accessibilityRole="button"
@@ -915,18 +916,18 @@ export default function ParcialesConfigScreen() {
                             onPress={() => setCreateActividadVisible(true)}
                             className="mt-3 self-start rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
                           >
-                            <Text className="text-sm font-black text-black">+ Agregar actividad</Text>
+                            <CustomText className="text-sm font-black text-black">+ Agregar actividad</CustomText>
                           </TouchableOpacity>
                         ) : (
-                          <Text className="mt-3 text-sm font-bold text-[#1E140D]">
+                          <CustomText className="mt-3 text-sm font-bold text-[#1E140D]">
                             Este parcial ya llegó a 100 puntos. Si necesitas puntos de reserva, crea otro parcial.
-                          </Text>
+                          </CustomText>
                         )}
 
                         {loadingActividades ? (
-                          <Text className="mt-4 text-sm font-semibold text-[#5E5045]">
+                          <CustomText className="mt-4 text-sm font-semibold text-[#5E5045]">
                             Cargando actividades...
-                          </Text>
+                          </CustomText>
                         ) : actividades.length > 0 ? (
                           <View className="mt-4">
                             {actividades.map((item, index) => (
@@ -934,9 +935,9 @@ export default function ParcialesConfigScreen() {
                             ))}
                           </View>
                         ) : (
-                          <Text className="mt-4 text-sm font-semibold text-[#5E5045]">
+                          <CustomText className="mt-4 text-sm font-semibold text-[#5E5045]">
                             No hay actividades configuradas aún en este parcial.
-                          </Text>
+                          </CustomText>
                         )}
                       </>
                     )}

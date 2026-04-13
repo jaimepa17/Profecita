@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, TouchableOpacity, View } from 'react-native';
+import { CustomText } from '../components/CustomText';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/types/navigation';
@@ -459,31 +460,31 @@ export default function EstudiantesScreen() {
           <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[24px] bg-black" />
           <View className="rounded-[24px] border-[3px] border-black bg-[#FDF9F1] p-5">
             <View className="rounded-full self-start border-[3px] border-black bg-[#D7ECFF] px-3 py-1">
-              <Text className="text-xs font-black text-black">ESTUDIANTE</Text>
+              <CustomText className="text-xs font-black text-black">ESTUDIANTE</CustomText>
             </View>
 
-            <Text className="mt-3 text-xl font-black text-black">
+            <CustomText className="mt-3 text-xl font-black text-black">
               {item.nombre_completo?.trim() || `Estudiante ${index + 1}`}
-            </Text>
-            <Text className="mt-1 text-sm font-semibold text-[#6B5A4A]">
+            </CustomText>
+            <CustomText className="mt-1 text-sm font-semibold text-[#6B5A4A]">
               {item.identificacion?.trim() || 'Sin identificación'}
-            </Text>
+            </CustomText>
 
             <View className="mt-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-3">
-              <Text className="text-xs font-bold uppercase tracking-wide text-[#7A6857]">
+              <CustomText className="text-xs font-bold uppercase tracking-wide text-[#7A6857]">
                 Grupos
-              </Text>
+              </CustomText>
 
               {studentGroups.length > 0 ? (
                 studentGroups.map((groupText, groupIndex) => (
-                  <Text key={`${item.id}-group-${groupIndex}`} className="mt-1 text-sm font-semibold text-black">
+                  <CustomText key={`${item.id}-group-${groupIndex}`} className="mt-1 text-sm font-semibold text-black">
                     {`• ${groupText}`}
-                  </Text>
+                  </CustomText>
                 ))
               ) : (
-                <Text className="mt-1 text-sm font-semibold text-[#6B5A4A]">
+                <CustomText className="mt-1 text-sm font-semibold text-[#6B5A4A]">
                   Sin grupos asignados
-                </Text>
+                </CustomText>
               )}
             </View>
 
@@ -495,7 +496,7 @@ export default function EstudiantesScreen() {
                 onPress={() => openEditEstudiante(item)}
                 className="rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-2"
               >
-                <Text className="text-sm font-black text-black">Editar</Text>
+                <CustomText className="text-sm font-black text-black">Editar</CustomText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -505,9 +506,9 @@ export default function EstudiantesScreen() {
                 onPress={() => setPendingDelete(item)}
                 className="rounded-xl border-[3px] border-black bg-[#FFC9C2] px-4 py-2"
               >
-                <Text className="text-sm font-black text-black">
+                <CustomText className="text-sm font-black text-black">
                   {deleting ? 'Eliminando...' : 'Eliminar'}
-                </Text>
+                </CustomText>
               </TouchableOpacity>
             </View>
           </View>
@@ -529,12 +530,12 @@ export default function EstudiantesScreen() {
                 onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
-                <Text className="text-xs font-black text-black">← Volver</Text>
+                <CustomText className="text-xs font-black text-black">← Volver</CustomText>
               </TouchableOpacity>
-              <Text className="mt-3 text-2xl font-black text-[#1E140D]">Estudiantes</Text>
-              <Text className="mt-1 text-sm font-semibold text-[#5E5045]">
+              <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Estudiantes</CustomText>
+              <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
                 Crea y asigna rápido desde una sola libreta.
-              </Text>
+              </CustomText>
             </View>
           </View>
         </View>
@@ -610,12 +611,12 @@ export default function EstudiantesScreen() {
               onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
-              <Text className="text-xs font-black text-black">← Volver</Text>
+              <CustomText className="text-xs font-black text-black">← Volver</CustomText>
             </TouchableOpacity>
-            <Text className="mt-3 text-2xl font-black text-[#1E140D]">Estudiantes</Text>
-            <Text className="mt-1 text-sm font-semibold text-[#5E5045]">
+            <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Estudiantes</CustomText>
+            <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
               Crea y asigna rápido desde una sola libreta.
-            </Text>
+            </CustomText>
           </View>
         </View>
       </View>
@@ -627,9 +628,9 @@ export default function EstudiantesScreen() {
 
           <View className="px-5 pt-4">
             <View className="self-start rounded-full border-[3px] border-black bg-[#F3E7D5] px-5 py-2">
-              <Text className="text-sm font-black text-black">
+              <CustomText className="text-sm font-black text-black">
                 {`Estudiantes listados: ${estudiantes.length}`}
-              </Text>
+              </CustomText>
             </View>
           </View>
 
@@ -642,13 +643,13 @@ export default function EstudiantesScreen() {
                 <View className="relative w-full">
                   <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[32px] bg-black" />
                   <View className="items-center rounded-[32px] border-[3px] border-black bg-[#FDF9F1] px-6 py-10">
-                    <Text className="text-5xl">🧑‍🎓</Text>
-                    <Text className="mt-4 text-center text-2xl font-black text-black">
+                    <CustomText className="text-5xl">🧑‍🎓</CustomText>
+                    <CustomText className="mt-4 text-center text-2xl font-black text-black">
                       Aun no hay estudiantes
-                    </Text>
-                    <Text className="mt-3 text-center text-base font-medium leading-6 text-[#5F5146]">
+                    </CustomText>
+                    <CustomText className="mt-3 text-center text-base font-medium leading-6 text-[#5F5146]">
                       Crea tu primer estudiante y asignalo a un grupo para empezar la libreta.
-                    </Text>
+                    </CustomText>
 
                     <TouchableOpacity
                       accessibilityRole="button"
@@ -657,9 +658,9 @@ export default function EstudiantesScreen() {
                       onPress={openCreateEstudiante}
                       className="mt-6 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-6 py-4"
                     >
-                      <Text className="text-base font-black text-black">
+                      <CustomText className="text-base font-black text-black">
                         + Crear y asignar estudiante
-                      </Text>
+                      </CustomText>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -675,7 +676,7 @@ export default function EstudiantesScreen() {
           />
 
           <View className="absolute -bottom-4 -right-2 rotate-[-16deg]">
-            <Text className="text-5xl">🌿</Text>
+            <CustomText className="text-5xl">🌿</CustomText>
           </View>
         </View>
       </View>
@@ -690,7 +691,7 @@ export default function EstudiantesScreen() {
             onPress={openCreateEstudiante}
             className="h-20 w-20 items-center justify-center rounded-full border-[4px] border-black bg-[#FFB6C9]"
           >
-            <Text className="text-4xl font-black text-black">+</Text>
+            <CustomText className="text-4xl font-black text-black">+</CustomText>
           </TouchableOpacity>
         </View>
       ) : null}
