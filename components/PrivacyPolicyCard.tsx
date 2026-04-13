@@ -1,19 +1,18 @@
-import { Linking, Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, TouchableOpacity, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomText } from './CustomText';
+import type { RootStackParamList } from '@/types/navigation';
 
 type PrivacyPolicyCardProps = {
   visible: boolean;
   onAccept: () => void;
   onClose: () => void;
-  /**
-   * If false, hides the accept button and leaves the modal as read-only view.
-   * Use for showing policies from login without requiring acceptance.
-   */
   showAccept?: boolean;
   policyUrl?: string;
 };
 
-const defaultPolicyUrl = 'https://www.example.com/politica-de-privacidad';
+const defaultPolicyUrl = '/politicas';
 
 export default function PrivacyPolicyCard({
   visible,
@@ -22,14 +21,19 @@ export default function PrivacyPolicyCard({
   showAccept = true,
   policyUrl,
 }: PrivacyPolicyCardProps) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const openPolicy = async () => {
+  const openPolicy = () => {
     const url = policyUrl ?? defaultPolicyUrl;
-    try {
-      await Linking.openURL(url);
-    } catch {
-      // sincrónico: puede ignorarse si no se puede abrir
+    
+    if (url.startsWith('http')) {
+      return;
     }
+    
+    onClose();
+    setTimeout(() => {
+      navigation.navigate('PrivacyPolicy');
+    }, 300);
   };
 
   return (

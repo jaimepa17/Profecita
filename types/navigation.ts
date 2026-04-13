@@ -19,6 +19,7 @@ export type RootStackParamList = {
     asignatura: Asignatura;
     grupo: Grupo;
   };
+  PrivacyPolicy: undefined;
 };
 
 export type RootNavigationProp = NativeStackNavigationProp<RootStackParamList>;

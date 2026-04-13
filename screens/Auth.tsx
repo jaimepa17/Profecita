@@ -349,7 +349,6 @@ export default function Auth() {
                 onAccept={policyModalShowAccept ? aceptarPoliticaYRegistrar : () => setPolicyModalVisible(false)}
                 onClose={() => setPolicyModalVisible(false)}
                 showAccept={policyModalShowAccept}
-                policyUrl="https://www.example.com/politica-de-privacidad"
               />
               
               <View className="absolute -bottom-12 -left-3 z-40 items-center rotate-[16deg] opacity-95">

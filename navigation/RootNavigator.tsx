@@ -9,6 +9,7 @@ import AniosScreen from '@/screens/Anios';
 import AsignaturasScreen from '@/screens/Asignaturas';
 import GruposScreen from '@/screens/Grupos';
 import ParcialesConfigScreen from '@/screens/ParcialesConfig';
+import PrivacyPolicyScreen from '@/screens/PrivacyPolicy';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -85,6 +86,13 @@ export default function RootNavigator({ session }: RootNavigatorProps) {
         component={ParcialesConfigScreen}
         options={{
           title: 'Configuración',
+        }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+        options={{
+          title: 'Política de Privacidad',
         }}
       />
     </Stack.Navigator>
