@@ -59,3 +59,4 @@ yarn-error.*
 skills-lock.json
 package-lock.json
 .qwen/settings.json
+.qwen/
