@@ -58,3 +58,4 @@ yarn-error.*
 /android
 skills-lock.json
 package-lock.json
+.qwen/settings.json
