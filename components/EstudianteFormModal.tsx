@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
 import { CustomText } from './CustomText';
 import SelectOptionModal from './SelectOptionModal';
 
@@ -124,20 +124,25 @@ export default function EstudianteFormModal({
         }}
       />
 
-      <Pressable className="flex-1 bg-black/35" onPress={onClose}>
-        <View className="flex-1 justify-end">
-          <Pressable className="rounded-t-[36px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-8">
-            <View className="mb-4 items-center">
-              <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
-            </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        className="flex-1"
+      >
+        <Pressable className="flex-1 bg-black/35" onPress={onClose}>
+          <View className="flex-1 justify-end">
+            <Pressable className="rounded-t-[36px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-8">
+              <View className="mb-4 items-center">
+                <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
+              </View>
 
-            <View className="relative mb-4">
-              <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
-              <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
-                <CustomText className="text-2xl font-black text-black">{resolvedTitle}</CustomText>
-                <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">{resolvedHelperText}</CustomText>
+              <View className="relative mb-4">
+                <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[28px] bg-black" />
+                <View className="rounded-[28px] border-[3px] border-black bg-[#FFF7E8] p-5">
+                  <CustomText className="text-2xl font-black text-black">{resolvedTitle}</CustomText>
+                  <CustomText className="mt-2 text-sm font-medium text-[#6B5A4A]">{resolvedHelperText}</CustomText>
 
-                <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
+                  <View className="mt-4 rounded-2xl border-[3px] border-black bg-white px-4 py-3">
                   <CustomText className="mb-1 text-xs font-black uppercase tracking-wide text-[#7A6857]">
                     Nombre completo
                   </CustomText>
@@ -228,9 +233,10 @@ export default function EstudianteFormModal({
                 </CustomText>
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </View>
-      </Pressable>
+            </Pressable>
+          </View>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
