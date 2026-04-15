@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Keyboard, KeyboardEvent, Modal, Platform, Pressable, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { CustomText } from './CustomText';
 
 type CarreraFormModalProps = {
@@ -17,13 +17,41 @@ export default function CarreraFormModal({
 }: CarreraFormModalProps) {
   const [nombre, setNombre] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
       setNombre('');
       setError(null);
+      setKeyboardHeight(0);
+      slideAnim.setValue(0);
+      return;
     }
-  }, [visible]);
+
+    const keyboardDidShow = Keyboard.addListener('keyboardDidShow', (e: KeyboardEvent) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      Animated.timing(slideAnim, {
+        toValue: -e.endCoordinates.height,
+        duration: e.duration,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const keyboardDidHide = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      keyboardDidShow.remove();
+      keyboardDidHide.remove();
+    };
+  }, [visible, slideAnim]);
 
   const handleSubmit = async () => {
     const clean = nombre.trim();
@@ -37,13 +65,18 @@ export default function CarreraFormModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        className="flex-1"
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [{ translateY: slideAnim }],
+        }}
       >
         <Pressable className="flex-1 bg-black/35" onPress={onClose}>
-          <View className="flex-1 justify-end">
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Pressable className="rounded-t-[36px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-8">
               <View className="mb-4 items-center">
                 <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
@@ -105,9 +138,9 @@ export default function CarreraFormModal({
                 </TouchableOpacity>
               </View>
             </Pressable>
-          </View>
+          </ScrollView>
         </Pressable>
-      </KeyboardAvoidingView>
+      </Animated.View>
     </Modal>
   );
 }

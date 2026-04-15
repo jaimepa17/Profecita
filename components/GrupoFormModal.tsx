@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Keyboard, KeyboardEvent, Modal, Pressable, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { CustomText } from './CustomText';
 
 type GrupoFormModalProps = {
@@ -20,14 +20,44 @@ export default function GrupoFormModal({
   const [nombre, setNombre] = useState('');
   const [turno, setTurno] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
       setNombre('');
       setTurno('');
       setError(null);
+      slideAnim.setValue(0);
+      return;
     }
-  }, [visible]);
+
+    slideAnim.setValue(0);
+  }, [visible, slideAnim]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const keyboardDidShow = Keyboard.addListener('keyboardDidShow', (e: KeyboardEvent) => {
+      Animated.timing(slideAnim, {
+        toValue: -e.endCoordinates.height,
+        duration: e.duration,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const keyboardDidHide = Keyboard.addListener('keyboardDidHide', () => {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      keyboardDidShow.remove();
+      keyboardDidHide.remove();
+    };
+  }, [visible, slideAnim]);
 
   const handleSubmit = async () => {
     const cleanNombre = nombre.trim();
@@ -42,13 +72,13 @@ export default function GrupoFormModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        className="flex-1"
-      >
+      <Animated.View style={{ flex: 1, transform: [{ translateY: slideAnim }] }}>
         <Pressable className="flex-1 bg-black/35" onPress={onClose}>
-          <View className="flex-1 justify-end">
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             <Pressable className="rounded-t-[36px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-8">
               <View className="mb-4 items-center">
                 <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
@@ -156,9 +186,9 @@ export default function GrupoFormModal({
                 </TouchableOpacity>
               </View>
             </Pressable>
-          </View>
+          </ScrollView>
         </Pressable>
-      </KeyboardAvoidingView>
+      </Animated.View>
     </Modal>
   );
 }
