@@ -1,0 +1,32 @@
+{
+  "estudiantes": [
+    { "numero": 1, "carnet": "2024001", "nombre": "Juan Perez Garcia" },
+    { "numero": 2, "carnet": "2024002", "nombre": "Maria Lopez Morales" },
+    { "numero": 3, "carnet": "2024003", "nombre": "Carlos Ramirez Soto" },
+    { "numero": 4, "carnet": "2024004", "nombre": "Ana Castro Vega" },
+    { "numero": 5, "carnet": "2024005", "nombre": "Luis Mendoza Ruiz" },
+    { "numero": 6, "carnet": "2024006", "nombre": "Sofia Hernandez Diaz" },
+    { "numero": 7, "carnet": "2024007", "nombre": "Miguel Torres Jimenez" },
+    { "numero": 8, "carnet": "2024008", "nombre": "Carmen Flores Rubio" },
+    { "numero": 9, "carnet": "2024009", "nombre": "Pedro Navarro Castillo" },
+    { "numero": 10, "carnet": "2024010", "nombre": "Laura Estrada Morales" }
+  ],
+  "sesiones": [
+    { "id": "s1", "fecha": "2026-03-03", "mes": "Marzo" },
+    { "id": "s2", "fecha": "2026-03-10", "mes": "Marzo" },
+    { "id": "s3", "fecha": "2026-03-17", "mes": "Marzo" },
+    { "id": "s4", "fecha": "2026-03-24", "mes": "Marzo" },
+    { "id": "s5", "fecha": "2026-04-07", "mes": "Abril" },
+    { "id": "s6", "fecha": "2026-04-14", "mes": "Abril" },
+    { "id": "s7", "fecha": "2026-04-21", "mes": "Abril" },
+    { "id": "s8", "fecha": "2026-04-28", "mes": "Abril" },
+    { "id": "s9", "fecha": "2026-05-05", "mes": "Mayo" },
+    { "id": "s10", "fecha": "2026-05-12", "mes": "Mayo" },
+    { "id": "s11", "fecha": "2026-05-19", "mes": "Mayo" },
+    { "id": "s12", "fecha": "2026-05-26", "mes": "Mayo" },
+    { "id": "s13", "fecha": "2026-06-02", "mes": "Junio" },
+    { "id": "s14", "fecha": "2026-06-09", "mes": "Junio" },
+    { "id": "s15", "fecha": "2026-06-16", "mes": "Junio" },
+    { "id": "s16", "fecha": "2026-06-23", "mes": "Junio" }
+  ]
+}

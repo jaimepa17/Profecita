@@ -44,6 +44,11 @@ export default function AsistenciaSesionesConfigModal({
   onDeleteSesion,
 }: Props) {
   const now = new Date();
+
+  useEffect(() => {
+    console.log('[MODAL] visible cambió a:', visible);
+  }, [visible]);
+
   const [manualFecha, setManualFecha] = useState('');
   const [manualTema, setManualTema] = useState('');
   const [bulkYear, setBulkYear] = useState(String(now.getFullYear()));
@@ -123,7 +128,10 @@ export default function AsistenciaSesionesConfigModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 justify-end">
         <Pressable className="absolute inset-0 bg-black/35" onPress={onClose} />
-        <View className="max-h-[88%] rounded-t-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-6">
+        <View 
+          className="max-h-[88%] rounded-t-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-6"
+          onStartShouldSetResponder={() => true}
+        >
             <View className="mb-3 items-center">
               <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
             </View>
