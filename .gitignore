@@ -51,7 +51,8 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-
+# opencode
+./opencode/
 
 # generated native folders
 /ios
