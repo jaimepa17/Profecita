@@ -78,6 +78,27 @@ export async function listEstudiantesByProfesor(
   return ok((data as Estudiante[]) ?? []);
 }
 
+export async function listEstudiantesByIds(
+  ids: string[]
+): Promise<ServiceResult<Estudiante[]>> {
+  const validIds = ids.map((id) => id?.trim()).filter((id): id is string => !!id);
+  if (validIds.length === 0) {
+    return ok([]);
+  }
+
+  const { data, error } = await supabase
+    .from('estudiantes')
+    .select('id, profesor_id, nombre_completo, identificacion, created_at')
+    .in('id', validIds)
+    .order('nombre_completo', { ascending: true });
+
+  if (error) {
+    return fail('No se pudieron cargar los estudiantes.', error.message);
+  }
+
+  return ok((data as Estudiante[]) ?? []);
+}
+
 export async function getEstudianteById(
   id: string
 ): Promise<ServiceResult<Estudiante | null>> {

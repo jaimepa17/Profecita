@@ -12,3 +12,4 @@ export * from './bloquesService';
 export * from './actividadesService';
 export * from './notasService';
 export * from './statsService';
+export * from './asistenciaService';

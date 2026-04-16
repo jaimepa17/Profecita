@@ -121,9 +121,9 @@ export default function AsistenciaSesionesConfigModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable className="flex-1 bg-black/35" onPress={onClose}>
-        <View className="flex-1 justify-end" onStartShouldSetResponder={() => true}>
-          <View className="max-h-[88%] rounded-t-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-6" onStartShouldSetResponder={() => true}>
+      <View className="flex-1 justify-end">
+        <Pressable className="absolute inset-0 bg-black/35" onPress={onClose} />
+        <View className="max-h-[88%] rounded-t-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-6">
             <View className="mb-3 items-center">
               <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
             </View>
@@ -301,8 +301,7 @@ export default function AsistenciaSesionesConfigModal({
               </View>
             </ScrollView>
           </View>
-        </View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }

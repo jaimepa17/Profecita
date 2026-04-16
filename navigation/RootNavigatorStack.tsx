@@ -12,6 +12,7 @@ import AniosScreen from '@/screens/Anios';
 import AsignaturasScreen from '@/screens/Asignaturas';
 import GruposScreen from '@/screens/Grupos';
 import ParcialesConfigScreen from '@/screens/ParcialesConfig';
+import AsistenciaScreen from '@/screens/Asistencia';
 import PrivacyPolicyScreen from '@/screens/PrivacyPolicy';
 import { forHorizontalSlide, getTransitionSpec } from '@/lib/animations/customTransitions';
 
@@ -119,6 +120,13 @@ export default function RootNavigatorStack({ session }: RootNavigatorProps) {
         component={ParcialesConfigScreen}
         options={{
           title: 'Configuración',
+        }}
+      />
+      <Stack.Screen
+        name="Asistencia"
+        component={AsistenciaScreen}
+        options={{
+          title: 'Asistencia',
         }}
       />
       <Stack.Screen

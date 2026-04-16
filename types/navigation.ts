@@ -19,6 +19,13 @@ export type RootStackParamList = {
     asignatura: Asignatura;
     grupo: Grupo;
   };
+  Asistencia: {
+    carrera?: Carrera;
+    anio?: Anio;
+    asignatura?: Asignatura;
+    grupo?: Grupo;
+    modo?: 'web' | 'mobile';
+  };
   PrivacyPolicy: undefined;
 };
 
