@@ -643,8 +643,8 @@ export default function AsistenciaScreen() {
                 activeOpacity={0.9}
                 onPress={() => {
                   console.log('[ASISTENCIA] Botón Configurar sesiones presionado. Estado actual:', configModalVisible);
-                  setConfigModalVisible(true);
-                  console.log('[ASISTENCIA] Estado después de setConfigModalVisible(true):', true);
+                  setConfigModalVisible(!configModalVisible);
+                  console.log('[ASISTENCIA] Estado después de toggle:', !configModalVisible);
                 }}
                 className="mt-3 self-start rounded-xl border-[3px] border-black bg-[#FFD98E] px-4 py-2"
               >
@@ -817,8 +817,11 @@ export default function AsistenciaScreen() {
         submitting={configSaving}
         sesiones={sesiones}
         onClose={() => {
+          console.log('[ASISTENCIA] onClose llamado, configSaving:', configSaving);
           if (!configSaving) {
+            console.log('[ASISTENCIA] Estableciendo configModalVisible a false');
             setConfigModalVisible(false);
+            console.log('[ASISTENCIA] onClose completado, configModalVisible ahora es:', false);
           }
         }}
         onCreateManual={handleCreateSesionManual}

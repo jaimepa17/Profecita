@@ -43,12 +43,9 @@ export default function AsistenciaSesionesConfigModal({
   onGenerateMonth,
   onDeleteSesion,
 }: Props) {
+  console.log('[MODAL] Render - visible:', visible);
+  
   const now = new Date();
-
-  useEffect(() => {
-    console.log('[MODAL] visible cambió a:', visible);
-  }, [visible]);
-
   const [manualFecha, setManualFecha] = useState('');
   const [manualTema, setManualTema] = useState('');
   const [bulkYear, setBulkYear] = useState(String(now.getFullYear()));
@@ -59,6 +56,7 @@ export default function AsistenciaSesionesConfigModal({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('[MODAL] visible changed to:', visible);
     if (!visible) {
       setError(null);
     }
@@ -124,14 +122,24 @@ export default function AsistenciaSesionesConfigModal({
     });
   };
 
+  console.log('[MODAL] About to render Modal with visible:', visible);
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end">
-        <Pressable className="absolute inset-0 bg-black/35" onPress={onClose} />
-        <View 
-          className="max-h-[88%] rounded-t-[34px] border-[4px] border-black bg-[#FDF9F1] px-5 pt-5 pb-6"
-          onStartShouldSetResponder={() => true}
-        >
+    <Modal 
+      visible={visible} 
+      animationType="fade" 
+      transparent 
+      onRequestClose={onClose}
+    >
+      <Pressable 
+        className="flex-1 bg-black/35" 
+        onPress={onClose}
+      >
+        <View className="flex-1 items-center justify-center px-4">
+          <Pressable 
+            className="w-full max-w-md rounded-[28px] border-[4px] border-black bg-[#FDF9F1] p-5"
+            onStartShouldSetResponder={() => true}
+          >
             <View className="mb-3 items-center">
               <View className="h-2 w-20 rounded-full bg-[#B9987A]" />
             </View>
@@ -141,7 +149,10 @@ export default function AsistenciaSesionesConfigModal({
               Crea sesiones manuales o genera encuentros por mes.
             </CustomText>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={{ paddingBottom: 24 }}
+            >
               <View className="mt-4 rounded-2xl border-[3px] border-black bg-[#FFF7E8] p-4">
                 <CustomText className="text-sm font-black text-black">Nueva sesion manual</CustomText>
                 <View className="mt-3 rounded-xl border-[3px] border-black bg-white px-3 py-2">
@@ -170,6 +181,7 @@ export default function AsistenciaSesionesConfigModal({
                   activeOpacity={0.9}
                   disabled={submitting}
                   onPress={() => {
+                    console.log('[MODAL] Botón Agregar sesión presionado');
                     void handleCreateManual();
                   }}
                   className="mt-3 rounded-xl border-[3px] border-black bg-[#D7ECFF] px-4 py-3"
@@ -248,6 +260,7 @@ export default function AsistenciaSesionesConfigModal({
                   activeOpacity={0.9}
                   disabled={submitting}
                   onPress={() => {
+                    console.log('[MODAL] Botón Generar sesiones presionado');
                     void handleGenerateMonth();
                   }}
                   className="mt-3 rounded-xl border-[3px] border-black bg-[#BDE9C7] px-4 py-3"
@@ -287,6 +300,7 @@ export default function AsistenciaSesionesConfigModal({
                       activeOpacity={0.9}
                       disabled={submitting}
                       onPress={() => {
+                        console.log('[MODAL] Botón Eliminar sesion:', sesion.id);
                         void onDeleteSesion(sesion.id);
                       }}
                       className="rounded-lg border-[2px] border-black bg-[#FFC9C2] px-3 py-1"
@@ -301,15 +315,19 @@ export default function AsistenciaSesionesConfigModal({
                 <TouchableOpacity
                   activeOpacity={0.9}
                   disabled={submitting}
-                  onPress={onClose}
+                  onPress={() => {
+                    console.log('[MODAL] Botón Cerrar presionado');
+                    onClose();
+                  }}
                   className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-3"
                 >
                   <CustomText className="text-center text-sm font-black text-black">Cerrar</CustomText>
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </View>
-      </View>
+          </Pressable>
+        </View>
+      </Pressable>
     </Modal>
   );
 }
