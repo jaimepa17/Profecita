@@ -231,7 +231,7 @@ export async function upsertRegistro(
   sesionId: string,
   estudianteId: string,
   input: UpdateRegistroInput
-): Promise<ServiceResult<AsistenciaRegistro>> {
+): Promise<ServiceResult<void>> {
   if (!sesionId?.trim()) {
     return fail('El id de la sesión es obligatorio.');
   }
@@ -253,17 +253,19 @@ export async function upsertRegistro(
     updated_at: new Date().toISOString(),
   };
 
-  const { data, error } = await supabase
-    .from('asistencia_registros')
-    .upsert(payload, { onConflict: 'sesion_id,estudiante_id' })
-    .select('id, sesion_id, estudiante_id, estado, justificacion_id, observaciones, created_at, updated_at')
-    .single();
+  const { error } = await supabase.rpc('upsert_asistencia_registro', {
+    p_sesion_id: payload.sesion_id,
+    p_estudiante_id: payload.estudiante_id,
+    p_estado: payload.estado,
+    p_justificacion_id: payload.justificacion_id,
+    p_observaciones: payload.observaciones,
+  });
 
   if (error) {
     return fail('No se pudo actualizar la asistencia.', error.message);
   }
 
-  return ok(data as AsistenciaRegistro);
+  return ok(undefined);
 }
 
 export async function getEstudiantesNuncaPresentados(
@@ -467,106 +469,103 @@ export async function getEstudiantesEnGrupo(
 export async function listGruposAsistenciaByProfesor(): Promise<
   ServiceResult<GrupoAsistenciaOption[]>
 > {
-  const user = await getCurrentUserId();
-  if (!user.ok) {
-    return user as ServiceResult<GrupoAsistenciaOption[]>;
-  }
-
-  const { data: carreras, error: errorCarreras } = await supabase
-    .from('carreras')
-    .select('id, nombre')
-    .eq('profesor_id', user.data);
-
-  if (errorCarreras) {
-    return fail('No se pudieron cargar las carreras.', errorCarreras.message);
-  }
-
-  const carreraRows = (carreras as { id: string; nombre: string }[]) ?? [];
-  if (carreraRows.length === 0) {
-    return ok([]);
-  }
-
-  const carreraIds = carreraRows.map((c) => c.id);
-  const carreraById = new Map(carreraRows.map((c) => [c.id, c.nombre]));
-
-  const { data: anios, error: errorAnios } = await supabase
-    .from('anios')
-    .select('id, carrera_id, nombre')
-    .in('carrera_id', carreraIds);
-
-  if (errorAnios) {
-    return fail('No se pudieron cargar los anos.', errorAnios.message);
-  }
-
-  const anioRows = (anios as { id: string; carrera_id: string; nombre: string }[]) ?? [];
-  if (anioRows.length === 0) {
-    return ok([]);
-  }
-
-  const anioIds = anioRows.map((a) => a.id);
-  const anioById = new Map(anioRows.map((a) => [a.id, a]));
-
-  const { data: asignaturas, error: errorAsignaturas } = await supabase
-    .from('asignaturas')
-    .select('id, anio_id, nombre')
-    .in('anio_id', anioIds);
-
-  if (errorAsignaturas) {
-    return fail('No se pudieron cargar las asignaturas.', errorAsignaturas.message);
-  }
-
-  const asignaturaRows =
-    (asignaturas as { id: string; anio_id: string; nombre: string }[]) ?? [];
-  if (asignaturaRows.length === 0) {
-    return ok([]);
-  }
-
-  const asignaturaIds = asignaturaRows.map((a) => a.id);
-  const asignaturaById = new Map(asignaturaRows.map((a) => [a.id, a]));
-
-  const { data: grupos, error: errorGrupos } = await supabase
+  const { data: gruposData, error: gruposError } = await supabase
     .from('grupos')
-    .select('id, asignatura_id, nombre, turno')
-    .in('asignatura_id', asignaturaIds)
+    .select('id, nombre, turno, asignatura_id')
     .order('created_at', { ascending: false });
 
-  if (errorGrupos) {
-    return fail('No se pudieron cargar los grupos.', errorGrupos.message);
+  if (gruposError) {
+    return fail('No se pudieron cargar los grupos.', gruposError.message);
   }
 
-  const groupRows =
-    (grupos as { id: string; asignatura_id: string; nombre: string; turno?: string | null }[]) ?? [];
+  const grupos =
+    (gruposData as Array<{
+      id: string;
+      nombre: string;
+      turno?: string | null;
+      asignatura_id: string;
+    }> | null) ?? [];
 
-  const result: GrupoAsistenciaOption[] = [];
-
-  for (const grupo of groupRows) {
-    const asignatura = asignaturaById.get(grupo.asignatura_id);
-    if (!asignatura) {
-      continue;
-    }
-
-    const anio = anioById.get(asignatura.anio_id);
-    if (!anio) {
-      continue;
-    }
-
-    const carreraNombre = carreraById.get(anio.carrera_id);
-    if (!carreraNombre) {
-      continue;
-    }
-
-    result.push({
-      id: grupo.id,
-      nombre: grupo.nombre,
-      turno: grupo.turno ?? null,
-      asignatura_id: asignatura.id,
-      asignatura_nombre: asignatura.nombre,
-      anio_id: anio.id,
-      anio_nombre: anio.nombre,
-      carrera_id: anio.carrera_id,
-      carrera_nombre: carreraNombre,
-    });
+  if (grupos.length === 0) {
+    return ok([]);
   }
+
+  const asignaturaIds = Array.from(new Set(grupos.map((g) => g.asignatura_id)));
+  const { data: asignaturasData, error: asignaturasError } = await supabase
+    .from('asignaturas')
+    .select('id, nombre, anio_id')
+    .in('id', asignaturaIds);
+
+  if (asignaturasError) {
+    return fail('No se pudieron cargar las asignaturas de los grupos.', asignaturasError.message);
+  }
+
+  const asignaturas =
+    (asignaturasData as Array<{
+      id: string;
+      nombre: string;
+      anio_id: string;
+    }> | null) ?? [];
+  const asignaturasById = new Map(asignaturas.map((a) => [a.id, a]));
+
+  const anioIds = Array.from(new Set(asignaturas.map((a) => a.anio_id)));
+  const { data: aniosData, error: aniosError } = await supabase
+    .from('anios')
+    .select('id, nombre, carrera_id')
+    .in('id', anioIds);
+
+  if (aniosError) {
+    return fail('No se pudieron cargar los años de los grupos.', aniosError.message);
+  }
+
+  const anios =
+    (aniosData as Array<{
+      id: string;
+      nombre: string;
+      carrera_id: string;
+    }> | null) ?? [];
+  const aniosById = new Map(anios.map((a) => [a.id, a]));
+
+  const carreraIds = Array.from(new Set(anios.map((a) => a.carrera_id)));
+  const { data: carrerasData, error: carrerasError } = await supabase
+    .from('carreras')
+    .select('id, nombre')
+    .in('id', carreraIds);
+
+  if (carrerasError) {
+    return fail('No se pudieron cargar las carreras de los grupos.', carrerasError.message);
+  }
+
+  const carreras =
+    (carrerasData as Array<{
+      id: string;
+      nombre: string;
+    }> | null) ?? [];
+  const carrerasById = new Map(carreras.map((c) => [c.id, c]));
+
+  const result: GrupoAsistenciaOption[] = grupos
+    .map((grupo) => {
+      const asignatura = asignaturasById.get(grupo.asignatura_id);
+      const anio = asignatura ? aniosById.get(asignatura.anio_id) : undefined;
+      const carrera = anio ? carrerasById.get(anio.carrera_id) : undefined;
+
+      if (!asignatura || !anio || !carrera) {
+        return null;
+      }
+
+      return {
+        id: grupo.id,
+        nombre: grupo.nombre,
+        turno: grupo.turno ?? null,
+        asignatura_id: asignatura.id,
+        asignatura_nombre: asignatura.nombre,
+        anio_id: anio.id,
+        anio_nombre: anio.nombre,
+        carrera_id: carrera.id,
+        carrera_nombre: carrera.nombre,
+      };
+    })
+    .filter((item): item is GrupoAsistenciaOption => !!item);
 
   return ok(result);
 }
