@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,7 +22,7 @@ import {
   createSesion,
   deleteSesion,
   getEstudiantesEnGrupo,
-  getRegistrosBySesion,
+  getRegistrosByGrupo,
   listContextoGrupoByGrupoId,
   listGruposAsistenciaByProfesor,
   listJustificacionesByEstudiantes,
@@ -51,6 +52,14 @@ type RegistroByKey = Record<string, AsistenciaRegistro>;
 const CELL_WIDTH_WEB = 52;
 const CELL_WIDTH_MOBILE = 58;
 const ROW_HEIGHT = 46;
+const ASISTENCIA_GRUPOS_CACHE_KEY = 'asistencia_grupos_cache';
+const ASISTENCIA_GRUPO_CACHE_PREFIX = 'asistencia_grupo_cache:';
+const ASISTENCIA_GRUPOS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type CachePayload<T> = {
+  savedAt: number;
+  data: T;
+};
 
 function monthName(fecha: string): string {
   const [year, month, day] = fecha.split('-').map(Number);
@@ -82,10 +91,32 @@ function estadoToUi(estado?: AsistenciaRegistro['estado']): { label: string; bg:
 }
 
 function nextEstadoMobile(estado?: AsistenciaRegistro['estado']): AsistenciaRegistro['estado'] {
-  if (estado === 'ausente' || !estado) return 'presente';
-  if (estado === 'presente') return 'justificado';
-  if (estado === 'justificado') return 'tardanza';
-  return 'ausente';
+  if (estado === 'presente') return 'ausente';
+  return 'presente';
+}
+
+function countWeekdaysInMonth(year: number, month: number, weekday: number): number {
+  let count = 0;
+  const cursor = new Date(year, month - 1, 1);
+  while (cursor.getMonth() === month - 1) {
+    if (cursor.getDay() === weekday) {
+      count += 1;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function formatMs(ms: number): string {
+  return `${Math.round(ms)}ms`;
+}
+
+function pendingCellLabel(estado?: AsistenciaRegistro['estado']): string {
+  if (estado === 'presente') {
+    return 'P';
+  }
+
+  return 'A';
 }
 
 export default function AsistenciaScreen() {
@@ -117,55 +148,102 @@ export default function AsistenciaScreen() {
   const [registrosMap, setRegistrosMap] = useState<RegistroByKey>({});
   const [justificaciones, setJustificaciones] = useState<AsistenciaJustificacion[]>([]);
   const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [pendingDeleteSesionIds, setPendingDeleteSesionIds] = useState<Set<string>>(new Set());
+  const [pendingRegistroKeys, setPendingRegistroKeys] = useState<Set<string>>(new Set());
   const contextoRef = useRef<ContextoVista | null>(contexto);
+  const estudiantesIdsRef = useRef<Set<string>>(new Set());
   const sesionesIdsRef = useRef<Set<string>>(new Set());
   const loadingGroupIdsRef = useRef<Set<string>>(new Set());
   const fetchingRef = useRef(false);
+  const pendingGroupLoadRef = useRef<{ ctx: ContextoVista; options?: { silent?: boolean } } | null>(null);
+  const pendingRegistroStartedAtRef = useRef<Record<string, number>>({});
+  const pendingRegistroPrevRef = useRef<Record<string, AsistenciaRegistro | undefined>>({});
   const { run: runConfigSession, isRunning: configSaving } = useSingleFlight();
 
   useEffect(() => {
     contextoRef.current = contexto;
   }, [contexto]);
 
+  const handleBackNavigation = useCallback(() => {
+    if (contextoRef.current) {
+      setConfigModalVisible(false);
+      setContexto(null);
+      return;
+    }
+
+    navigation.goBack();
+  }, [navigation]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
+      if (!contextoRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      setConfigModalVisible(false);
+      setContexto(null);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   useEffect(() => {
     sesionesIdsRef.current = new Set(sesiones.map((s) => s.id));
   }, [sesiones]);
 
-  const cargarSelector = useCallback(async () => {
-    setSelectorLoading(true);
+  useEffect(() => {
+    estudiantesIdsRef.current = new Set(estudiantes.map((e) => e.id));
+  }, [estudiantes]);
+
+  const cargarSelector = useCallback(async (options?: { silent?: boolean }) => {
+    const shouldShowLoading = !options?.silent && gruposDisponibles.length === 0;
+    const startedAt = Date.now();
+    if (shouldShowLoading) {
+      setSelectorLoading(true);
+    }
+
     const result = await listGruposAsistenciaByProfesor();
     if (!result.ok) {
       Alert.alert('No se pudieron cargar los grupos', result.error);
-      setGruposDisponibles([]);
-      setSelectorLoading(false);
+      if (shouldShowLoading) {
+        setSelectorLoading(false);
+      }
       return;
     }
+
     setGruposDisponibles(result.data);
-    setSelectorLoading(false);
-  }, []);
+    await AsyncStorage.setItem(
+      ASISTENCIA_GRUPOS_CACHE_KEY,
+      JSON.stringify({ savedAt: Date.now(), data: result.data } satisfies CachePayload<GrupoAsistenciaOption[]>)
+    );
+
+    if (shouldShowLoading) {
+      setSelectorLoading(false);
+    }
+  }, [gruposDisponibles.length]);
 
   const cargarRegistrosPorSesiones = useCallback(
-    async (sesionesData: AsistenciaSesion[], estudiantesIds: string[]) => {
+    async (grupoId: string, sesionesData: AsistenciaSesion[], estudiantesIds: string[]) => {
       if (sesionesData.length === 0 || estudiantesIds.length === 0) {
         setRegistrosMap({});
-        return;
+        return {} as RegistroByKey;
       }
 
-      const pares = await Promise.all(
-        sesionesData.map(async (sesion) => {
-          const result = await getRegistrosBySesion(sesion.id);
-          if (!result.ok) {
-            return [] as AsistenciaRegistro[];
-          }
-          return result.data;
-        })
-      );
+      const result = await getRegistrosByGrupo(grupoId, estudiantesIds);
+      if (!result.ok) {
+        setRegistrosMap({});
+        return {} as RegistroByKey;
+      }
 
       const byKey: RegistroByKey = {};
-      pares.flat().forEach((r) => {
-        byKey[keyRegistro(r.sesion_id, r.estudiante_id)] = r;
+      Object.values(result.data).forEach((registros) => {
+        registros.forEach((r) => {
+          byKey[keyRegistro(r.sesion_id, r.estudiante_id)] = r;
+        });
       });
       setRegistrosMap(byKey);
+      return byKey;
     },
     []
   );
@@ -174,9 +252,11 @@ export default function AsistenciaScreen() {
     async (ctx: ContextoVista, options?: { silent?: boolean }) => {
       const isSilent = !!options?.silent;
       if (fetchingRef.current) {
+        pendingGroupLoadRef.current = { ctx, options };
         return;
       }
 
+      const startedAt = Date.now();
       fetchingRef.current = true;
       const shouldShowLoading = !isSilent && !loadingGroupIdsRef.current.has(ctx.grupo_id);
       if (shouldShowLoading) {
@@ -184,6 +264,39 @@ export default function AsistenciaScreen() {
       }
 
       try {
+        const cacheKey = `${ASISTENCIA_GRUPO_CACHE_PREFIX}${ctx.grupo_id}`;
+        if (!isSilent) {
+          try {
+            const cached = await AsyncStorage.getItem(cacheKey);
+            if (cached) {
+              const parsed = JSON.parse(cached) as {
+                savedAt: number;
+                estudiantes: Estudiante[];
+                sesiones: AsistenciaSesion[];
+                justificaciones: AsistenciaJustificacion[];
+                registrosMap: RegistroByKey;
+              };
+
+              const isFresh = Date.now() - Number(parsed.savedAt ?? 0) < ASISTENCIA_GRUPOS_CACHE_TTL_MS;
+              if (isFresh) {
+                if (contextoRef.current?.grupo_id !== ctx.grupo_id) {
+                  return;
+                }
+
+                setEstudiantes(parsed.estudiantes ?? []);
+                setSesiones(parsed.sesiones ?? []);
+                setJustificaciones(parsed.justificaciones ?? []);
+                setRegistrosMap(parsed.registrosMap ?? {});
+                loadingGroupIdsRef.current.add(ctx.grupo_id);
+                setLoading(false);
+                void cargarDatosGrupo(ctx, { silent: true });
+                return;
+              }
+            }
+          } catch {
+            // Si falla el cache, seguimos con la carga normal.
+          }
+        }
 
         const [grupoEstudiantesResult, sesionesResult] = await Promise.all([
           getEstudiantesEnGrupo(ctx.grupo_id),
@@ -210,6 +323,7 @@ export default function AsistenciaScreen() {
         }
 
         const ids = grupoEstudiantesResult.data.map((g) => g.estudiante_id);
+        const estudiantesStartedAt = Date.now();
         const estudiantesResult = await listEstudiantesByIds(ids);
         if (!estudiantesResult.ok) {
           if (!isSilent) {
@@ -233,18 +347,40 @@ export default function AsistenciaScreen() {
           (a.nombre_completo || '').localeCompare(b.nombre_completo || '', 'es')
         );
 
+        if (contextoRef.current?.grupo_id !== ctx.grupo_id) {
+          return;
+        }
+
         setEstudiantes(estudiantesOrdenados);
         setSesiones(sesionesResult.data);
         setJustificaciones(justificacionesResult.ok ? justificacionesResult.data : []);
-        await cargarRegistrosPorSesiones(sesionesResult.data, ids);
+        const registrosMapActual = await cargarRegistrosPorSesiones(ctx.grupo_id, sesionesResult.data, ids);
+
+        await AsyncStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            savedAt: Date.now(),
+            estudiantes: estudiantesOrdenados,
+            sesiones: sesionesResult.data,
+            justificaciones: justificacionesResult.ok ? justificacionesResult.data : [],
+            registrosMap: registrosMapActual,
+          })
+        );
 
         loadingGroupIdsRef.current.add(ctx.grupo_id);
 
         if (shouldShowLoading) {
           setLoading(false);
         }
+
       } finally {
         fetchingRef.current = false;
+
+        const pending = pendingGroupLoadRef.current;
+        pendingGroupLoadRef.current = null;
+        if (pending) {
+          void cargarDatosGrupo(pending.ctx, pending.options);
+        }
       }
     },
     [cargarRegistrosPorSesiones]
@@ -259,19 +395,60 @@ export default function AsistenciaScreen() {
   }, [cargarDatosGrupo]);
 
   const handleRegistroUpsert = useCallback((row: AsistenciaRegistro) => {
+    const registroKey = keyRegistro(row.sesion_id, row.estudiante_id);
+
     if (!sesionesIdsRef.current.has(row.sesion_id)) {
       return;
     }
 
     setRegistrosMap((curr) => ({
       ...curr,
-      [keyRegistro(row.sesion_id, row.estudiante_id)]: row,
+      [registroKey]: row,
     }));
+
+    setPendingRegistroKeys((prev) => {
+      if (!prev.has(registroKey)) {
+        return prev;
+      }
+
+      const next = new Set(prev);
+      next.delete(registroKey);
+      return next;
+    });
+
+    delete pendingRegistroPrevRef.current[registroKey];
   }, []);
 
   const handleRegistroDelete = useCallback(() => {
     handleForegroundSync();
   }, [handleForegroundSync]);
+
+  const handleSesionInsert = useCallback((row: AsistenciaSesion) => {
+    const ctx = contextoRef.current;
+    if (!ctx || row.grupo_id !== ctx.grupo_id) {
+      return;
+    }
+
+    setSesiones((prev) => [row, ...prev.filter((item) => item.id !== row.id)]);
+  }, []);
+
+  const handleSesionUpdate = useCallback((row: AsistenciaSesion) => {
+    const ctx = contextoRef.current;
+    if (!ctx || row.grupo_id !== ctx.grupo_id) {
+      return;
+    }
+
+    setSesiones((prev) => prev.map((item) => (item.id === row.id ? row : item)));
+  }, []);
+
+  const handleSesionDelete = useCallback((row: { id: string }) => {
+    setSesiones((prev) => prev.filter((item) => item.id !== row.id));
+    setPendingDeleteSesionIds((prev) => {
+      const next = new Set(prev);
+      next.delete(row.id);
+      return next;
+    });
+  }, []);
 
   const handleCreateSesionManual = useCallback(
     async (input: { fecha: string; tema?: string }) => {
@@ -296,14 +473,43 @@ export default function AsistenciaScreen() {
 
   const handleDeleteSesion = useCallback(
     async (sesionId: string) => {
+      setPendingDeleteSesionIds((prev) => new Set(prev).add(sesionId));
+
       await runConfigSession(async () => {
         const result = await deleteSesion(sesionId);
         if (!result.ok) {
+          setPendingDeleteSesionIds((prev) => {
+            const next = new Set(prev);
+            next.delete(sesionId);
+            return next;
+          });
+
           Alert.alert('No se pudo eliminar la sesion', result.error);
+          return;
+        }
+
+        const ctx = contextoRef.current;
+        if (!ctx) {
+          setPendingDeleteSesionIds((prev) => {
+            const next = new Set(prev);
+            next.delete(sesionId);
+            return next;
+          });
+          return;
+        }
+
+        await cargarDatosGrupo(ctx, { silent: true });
+
+        if (!sesionesIdsRef.current.has(sesionId)) {
+          setPendingDeleteSesionIds((prev) => {
+            const next = new Set(prev);
+            next.delete(sesionId);
+            return next;
+          });
         }
       });
     },
-    [runConfigSession]
+    [cargarDatosGrupo, runConfigSession]
   );
 
   const handleGenerateMonth = useCallback(
@@ -327,6 +533,15 @@ export default function AsistenciaScreen() {
           dates.push(toISO(cursor));
         }
         cursor.setDate(cursor.getDate() + 1);
+      }
+
+      const maxPosibles = countWeekdaysInMonth(input.year, input.month, input.weekday);
+      if (input.cantidad > maxPosibles) {
+        Alert.alert(
+          'Cantidad no disponible',
+          `Solo hay ${maxPosibles} dias disponibles para esa combinacion en el mes seleccionado.`
+        );
+        return;
       }
 
       if (dates.length === 0) {
@@ -362,7 +577,22 @@ export default function AsistenciaScreen() {
 
     const boot = async () => {
       if (!contexto) {
-        await cargarSelector();
+        let hasCache = false;
+        try {
+          const cached = await AsyncStorage.getItem(ASISTENCIA_GRUPOS_CACHE_KEY);
+          if (cached && mounted) {
+            const parsed = JSON.parse(cached) as CachePayload<GrupoAsistenciaOption[]>;
+            const isFresh = Date.now() - Number(parsed.savedAt ?? 0) < ASISTENCIA_GRUPOS_CACHE_TTL_MS;
+            if (isFresh && Array.isArray(parsed.data)) {
+              setGruposDisponibles(parsed.data);
+              hasCache = parsed.data.length > 0;
+            }
+          }
+        } catch {
+          // Si el cache falla, continuar con carga de red.
+        }
+
+        await cargarSelector({ silent: hasCache });
         if (!mounted) return;
         setLoading(false);
         return;
@@ -376,21 +606,34 @@ export default function AsistenciaScreen() {
     };
   }, [contexto, cargarDatosGrupo, cargarSelector]);
 
-  useRealtimeCollection<AsistenciaSesion>({
+  useRealtimeTable<AsistenciaSesion>({
     enabled: !!contexto,
     table: 'asistencia_sesiones',
-    filter: contexto ? `grupo_id=eq.${contexto.grupo_id}` : undefined,
     channelName: `realtime:asistencia_sesiones:${contexto?.grupo_id ?? 'none'}`,
-    setItems: setSesiones,
-    onForegroundSync: handleForegroundSync,
+    onInsert: handleSesionInsert,
+    onUpdate: handleSesionUpdate,
+    onDelete: handleSesionDelete,
   });
 
-  useRealtimeCollection<AsistenciaJustificacion>({
+  useRealtimeTable<AsistenciaJustificacion>({
     enabled: estudiantes.length > 0,
     table: 'asistencia_justificaciones',
     channelName: `realtime:asistencia_justificaciones:${contexto?.grupo_id ?? 'none'}`,
-    setItems: setJustificaciones,
-    onForegroundSync: handleForegroundSync,
+    onInsert: (row) => {
+      if (!estudiantesIdsRef.current.has((row as AsistenciaJustificacion).estudiante_id)) {
+        return;
+      }
+      setJustificaciones((prev) => [row, ...prev.filter((item) => item.id !== row.id)]);
+    },
+    onUpdate: (row) => {
+      if (!estudiantesIdsRef.current.has((row as AsistenciaJustificacion).estudiante_id)) {
+        return;
+      }
+      setJustificaciones((prev) => prev.map((item) => (item.id === row.id ? row : item)));
+    },
+    onDelete: (row) => {
+      setJustificaciones((prev) => prev.filter((item) => item.id !== row.id));
+    },
   });
 
   useRealtimeTable<AsistenciaRegistro>({
@@ -415,6 +658,8 @@ export default function AsistenciaScreen() {
   }, [sesiones]);
 
   const resumenPorEstudiante = useMemo(() => {
+    const totalSesiones = sesiones.length;
+
     const out: Record<string, { asistencias: number; porcentaje: number }> = {};
     estudiantes.forEach((e) => {
       const totalPresentes = sesiones.reduce((acc, s) => {
@@ -424,55 +669,94 @@ export default function AsistenciaScreen() {
           ? acc + 1
           : acc;
       }, 0);
-      const porcentajeBase16 = (totalPresentes / 16) * 100;
+
+      const porcentajeDinamico =
+        totalSesiones > 0 ? (totalPresentes / totalSesiones) * 100 : 0;
+
       out[e.id] = {
         asistencias: totalPresentes,
-        porcentaje: Number.isFinite(porcentajeBase16) ? porcentajeBase16 : 0,
+        porcentaje: Number.isFinite(porcentajeDinamico) ? porcentajeDinamico : 0,
       };
     });
     return out;
   }, [estudiantes, sesiones, registrosMap]);
 
   const nuncaPresentados = useMemo(() => {
-    return estudiantes.filter((e) => (resumenPorEstudiante[e.id]?.asistencias ?? 0) === 0);
-  }, [estudiantes, resumenPorEstudiante]);
+    if (sesiones.length === 0) {
+      return [];
+    }
+
+    return estudiantes.filter((e) => (resumenPorEstudiante[e.id]?.porcentaje ?? 0) === 0);
+  }, [estudiantes, resumenPorEstudiante, sesiones.length]);
 
   const onToggleEstado = useCallback(
     async (sesionId: string, estudianteId: string, next: AsistenciaRegistro['estado']) => {
       const k = keyRegistro(sesionId, estudianteId);
+      if (pendingRegistroKeys.has(k)) {
+        return;
+      }
+
+      const startedAt = Date.now();
       const prev = registrosMap[k];
+      pendingRegistroPrevRef.current[k] = prev;
 
-      const optimistic: AsistenciaRegistro = {
-        id: prev?.id ?? `tmp-${k}`,
-        sesion_id: sesionId,
-        estudiante_id: estudianteId,
-        estado: next,
-        justificacion_id: prev?.justificacion_id ?? null,
-        observaciones: prev?.observaciones ?? null,
-        created_at: prev?.created_at ?? new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      setRegistrosMap((curr) => ({
+        ...curr,
+        [k]: {
+          id: prev?.id ?? `tmp-${k}`,
+          sesion_id: sesionId,
+          estudiante_id: estudianteId,
+          estado: next,
+          justificacion_id: prev?.justificacion_id ?? null,
+          observaciones: prev?.observaciones ?? null,
+          created_at: prev?.created_at ?? new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      }));
 
-      setRegistrosMap((curr) => ({ ...curr, [k]: optimistic }));
+      setPendingRegistroKeys((prev) => {
+        if (prev.has(k)) {
+          return prev;
+        }
+
+        const nextPending = new Set(prev);
+        nextPending.add(k);
+        pendingRegistroStartedAtRef.current[k] = startedAt;
+
+        return nextPending;
+      });
 
       const result = await upsertRegistro(sesionId, estudianteId, { estado: next });
       if (!result.ok) {
+        setPendingRegistroKeys((prev) => {
+          if (!prev.has(k)) {
+            return prev;
+          }
+
+          const nextPending = new Set(prev);
+          nextPending.delete(k);
+          return nextPending;
+        });
+
         setRegistrosMap((curr) => {
           const nextMap = { ...curr };
-          if (prev) {
-            nextMap[k] = prev;
+          const previous = pendingRegistroPrevRef.current[k];
+          if (previous) {
+            nextMap[k] = previous;
           } else {
             delete nextMap[k];
           }
           return nextMap;
         });
+
+        delete pendingRegistroPrevRef.current[k];
+        delete pendingRegistroStartedAtRef.current[k];
+
         Alert.alert('No se pudo guardar asistencia', result.error);
         return;
       }
-
-      setRegistrosMap((curr) => ({ ...curr, [k]: result.data }));
     },
-    [registrosMap]
+    [pendingRegistroKeys, registrosMap]
   );
 
   const selectGrupoDesdeLista = useCallback(
@@ -519,6 +803,7 @@ export default function AsistenciaScreen() {
           visible={configModalVisible}
           submitting={configSaving}
           sesiones={sesiones}
+          pendingDeleteSesionIds={pendingDeleteSesionIds}
           onClose={() => {
             if (!configSaving) {
               setConfigModalVisible(false);
@@ -536,7 +821,7 @@ export default function AsistenciaScreen() {
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={navigation.goBack}
+                onPress={handleBackNavigation}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
@@ -621,6 +906,21 @@ export default function AsistenciaScreen() {
 
     return (
       <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
+        <AsistenciaSesionesConfigModal
+          visible={configModalVisible}
+          submitting={configSaving}
+          sesiones={sesiones}
+          pendingDeleteSesionIds={pendingDeleteSesionIds}
+          onClose={() => {
+            if (!configSaving) {
+              setConfigModalVisible(false);
+            }
+          }}
+          onCreateManual={handleCreateSesionManual}
+          onGenerateMonth={handleGenerateMonth}
+          onDeleteSesion={handleDeleteSesion}
+        />
+
         <View className="relative mb-4 px-1">
           <View className="relative">
             <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
@@ -628,24 +928,20 @@ export default function AsistenciaScreen() {
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={navigation.goBack}
+                onPress={handleBackNavigation}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
               </TouchableOpacity>
               <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Registro de Asistencia</CustomText>
               <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-                Version web con tabla completa y columnas fijas
+                Gestiona sesiones y registro de asistencia del grupo
               </CustomText>
 
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={() => {
-                  console.log('[ASISTENCIA] Botón Configurar sesiones presionado. Estado actual:', configModalVisible);
-                  setConfigModalVisible(!configModalVisible);
-                  console.log('[ASISTENCIA] Estado después de toggle:', !configModalVisible);
-                }}
+                onPress={() => setConfigModalVisible(true)}
                 className="mt-3 self-start rounded-xl border-[3px] border-black bg-[#FFD98E] px-4 py-2"
               >
                 <CustomText className="text-xs font-black text-black">Configurar sesiones</CustomText>
@@ -731,14 +1027,25 @@ export default function AsistenciaScreen() {
                         {sesiones.map((s) => {
                           const registro = registrosMap[keyRegistro(s.id, e.id)];
                           const ui = estadoToUi(registro?.estado);
+                          const registroKey = keyRegistro(s.id, e.id);
+                          const isPending = pendingRegistroKeys.has(registroKey);
                           return (
                             <Pressable
-                              key={`${e.id}-${s.id}`}
+                              key={registroKey}
                               onPress={() => {
+                                if (isPending) {
+                                  return;
+                                }
+
                                 const next = registro?.estado === 'presente' ? 'ausente' : 'presente';
                                 void onToggleEstado(s.id, e.id, next);
                               }}
-                              style={{ width: CELL_WIDTH_WEB, backgroundColor: ui.bg }}
+                              disabled={isPending}
+                              style={{
+                                width: CELL_WIDTH_WEB,
+                                backgroundColor: ui.bg,
+                                opacity: isPending ? 0.72 : 1,
+                              }}
                               className="items-center justify-center border-r border-[#DCCEC2]"
                             >
                               <CustomText className="text-xs font-black text-black">{ui.label}</CustomText>
@@ -816,12 +1123,10 @@ export default function AsistenciaScreen() {
         visible={configModalVisible}
         submitting={configSaving}
         sesiones={sesiones}
+        pendingDeleteSesionIds={pendingDeleteSesionIds}
         onClose={() => {
-          console.log('[ASISTENCIA] onClose llamado, configSaving:', configSaving);
           if (!configSaving) {
-            console.log('[ASISTENCIA] Estableciendo configModalVisible a false');
             setConfigModalVisible(false);
-            console.log('[ASISTENCIA] onClose completado, configModalVisible ahora es:', false);
           }
         }}
         onCreateManual={handleCreateSesionManual}
@@ -836,14 +1141,14 @@ export default function AsistenciaScreen() {
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={navigation.goBack}
+              onPress={handleBackNavigation}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
             </TouchableOpacity>
             <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Asistencia Movil</CustomText>
             <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-              {'Toque en celda: A -> P -> J -> T -> A'}
+              {'Toque en celda: A -> P -> A'}
             </CustomText>
 
             <TouchableOpacity
@@ -889,23 +1194,31 @@ export default function AsistenciaScreen() {
                     <View style={{ width: leftWidthMobile, minHeight: 64 }} className="px-2 py-2 border-r border-[#DCCEC2]">
                       <CustomText className="text-xs font-black text-black">{index + 1}. {item.nombre_completo}</CustomText>
                       <CustomText className="mt-1 text-[10px] font-semibold text-[#6B5A4A]">
-                        {item.identificacion || '--'} • {resumen.asistencias}/16 ({Math.round(resumen.porcentaje)}%)
+                        {item.identificacion || '--'} • {resumen.asistencias}/{sesiones.length} ({Math.round(resumen.porcentaje)}%)
                       </CustomText>
                     </View>
                     {sesiones.map((s) => {
                       const registro = registrosMap[keyRegistro(s.id, item.id)];
                       const ui = estadoToUi(registro?.estado);
+                      const registroKey = keyRegistro(s.id, item.id);
+                      const isPending = pendingRegistroKeys.has(registroKey);
                       return (
                         <Pressable
-                          key={`${item.id}-${s.id}`}
+                          key={registroKey}
                           onPress={() => {
+                            if (isPending) {
+                              return;
+                            }
+
                             const next = nextEstadoMobile(registro?.estado);
                             void onToggleEstado(s.id, item.id, next);
                           }}
+                          disabled={isPending}
                           style={{
                             width: CELL_WIDTH_MOBILE,
                             minHeight: 64,
                             backgroundColor: ui.bg,
+                            opacity: isPending ? 0.72 : 1,
                           }}
                           className="items-center justify-center border-r border-[#DCCEC2]"
                         >
