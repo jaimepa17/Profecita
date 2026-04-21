@@ -19,6 +19,7 @@ export type RootStackParamList = {
     asignatura: Asignatura;
     grupo: Grupo;
   };
+  AsistenciaSelector: undefined;
   Asistencia: {
     carrera?: Carrera;
     anio?: Anio;

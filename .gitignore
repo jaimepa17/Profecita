@@ -62,3 +62,4 @@ package-lock.json
 .qwen/settings.json
 .qwen/
 accept-licenses.ps1
+.opencode/opencode.json

@@ -24,14 +24,12 @@ import {
   getEstudiantesEnGrupo,
   getRegistrosByGrupo,
   listContextoGrupoByGrupoId,
-  listGruposAsistenciaByProfesor,
   listJustificacionesByEstudiantes,
   listSesionesByGrupo,
   upsertRegistro,
-  type GrupoAsistenciaOption,
 } from '@/lib/services/asistenciaService';
 import { listEstudiantesByIds, type Estudiante } from '@/lib/services/estudiantesService';
-import { useRealtimeCollection, useRealtimeTable } from '@/lib/realtime';
+import { useRealtimeTable } from '@/lib/realtime';
 import { useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import AsistenciaSesionesConfigModal from '@/components/AsistenciaSesionesConfigModal';
 
@@ -52,7 +50,6 @@ type RegistroByKey = Record<string, AsistenciaRegistro>;
 const CELL_WIDTH_WEB = 52;
 const CELL_WIDTH_MOBILE = 58;
 const ROW_HEIGHT = 46;
-const ASISTENCIA_GRUPOS_CACHE_KEY = 'asistencia_grupos_cache';
 const ASISTENCIA_GRUPO_CACHE_PREFIX = 'asistencia_grupo_cache:';
 const ASISTENCIA_GRUPOS_CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -127,8 +124,6 @@ export default function AsistenciaScreen() {
   const isWeb = process.env.EXPO_OS === 'web';
 
   const [loading, setLoading] = useState(true);
-  const [selectorLoading, setSelectorLoading] = useState(false);
-  const [gruposDisponibles, setGruposDisponibles] = useState<GrupoAsistenciaOption[]>([]);
   const [contexto, setContexto] = useState<ContextoVista | null>(() => {
     if (params?.grupo && params?.asignatura && params?.anio && params?.carrera) {
       return {
@@ -164,30 +159,6 @@ export default function AsistenciaScreen() {
     contextoRef.current = contexto;
   }, [contexto]);
 
-  const handleBackNavigation = useCallback(() => {
-    if (contextoRef.current) {
-      setConfigModalVisible(false);
-      setContexto(null);
-      return;
-    }
-
-    navigation.goBack();
-  }, [navigation]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (event) => {
-      if (!contextoRef.current) {
-        return;
-      }
-
-      event.preventDefault();
-      setConfigModalVisible(false);
-      setContexto(null);
-    });
-
-    return unsubscribe;
-  }, [navigation]);
-
   useEffect(() => {
     sesionesIdsRef.current = new Set(sesiones.map((s) => s.id));
   }, [sesiones]);
@@ -195,33 +166,6 @@ export default function AsistenciaScreen() {
   useEffect(() => {
     estudiantesIdsRef.current = new Set(estudiantes.map((e) => e.id));
   }, [estudiantes]);
-
-  const cargarSelector = useCallback(async (options?: { silent?: boolean }) => {
-    const shouldShowLoading = !options?.silent && gruposDisponibles.length === 0;
-    const startedAt = Date.now();
-    if (shouldShowLoading) {
-      setSelectorLoading(true);
-    }
-
-    const result = await listGruposAsistenciaByProfesor();
-    if (!result.ok) {
-      Alert.alert('No se pudieron cargar los grupos', result.error);
-      if (shouldShowLoading) {
-        setSelectorLoading(false);
-      }
-      return;
-    }
-
-    setGruposDisponibles(result.data);
-    await AsyncStorage.setItem(
-      ASISTENCIA_GRUPOS_CACHE_KEY,
-      JSON.stringify({ savedAt: Date.now(), data: result.data } satisfies CachePayload<GrupoAsistenciaOption[]>)
-    );
-
-    if (shouldShowLoading) {
-      setSelectorLoading(false);
-    }
-  }, [gruposDisponibles.length]);
 
   const cargarRegistrosPorSesiones = useCallback(
     async (grupoId: string, sesionesData: AsistenciaSesion[], estudiantesIds: string[]) => {
@@ -576,35 +520,14 @@ export default function AsistenciaScreen() {
     let mounted = true;
 
     const boot = async () => {
-      if (!contexto) {
-        let hasCache = false;
-        try {
-          const cached = await AsyncStorage.getItem(ASISTENCIA_GRUPOS_CACHE_KEY);
-          if (cached && mounted) {
-            const parsed = JSON.parse(cached) as CachePayload<GrupoAsistenciaOption[]>;
-            const isFresh = Date.now() - Number(parsed.savedAt ?? 0) < ASISTENCIA_GRUPOS_CACHE_TTL_MS;
-            if (isFresh && Array.isArray(parsed.data)) {
-              setGruposDisponibles(parsed.data);
-              hasCache = parsed.data.length > 0;
-            }
-          }
-        } catch {
-          // Si el cache falla, continuar con carga de red.
-        }
-
-        await cargarSelector({ silent: hasCache });
-        if (!mounted) return;
-        setLoading(false);
-        return;
-      }
-      await cargarDatosGrupo(contexto, { silent: false });
+      await cargarDatosGrupo(contexto!, { silent: false });
     };
 
     void boot();
     return () => {
       mounted = false;
     };
-  }, [contexto, cargarDatosGrupo, cargarSelector]);
+  }, [contexto, cargarDatosGrupo]);
 
   useRealtimeTable<AsistenciaSesion>({
     enabled: !!contexto,
@@ -759,21 +682,6 @@ export default function AsistenciaScreen() {
     [pendingRegistroKeys, registrosMap]
   );
 
-  const selectGrupoDesdeLista = useCallback(
-    async (grupo: GrupoAsistenciaOption) => {
-      const context: ContextoVista = {
-        grupo_id: grupo.id,
-        carrera_nombre: grupo.carrera_nombre,
-        anio_nombre: grupo.anio_nombre,
-        asignatura_nombre: grupo.asignatura_nombre,
-        grupo_nombre: grupo.nombre,
-        turno: grupo.turno,
-      };
-      setContexto(context);
-    },
-    []
-  );
-
   const openContextoFromParamsIfOnlyGroup = useCallback(async () => {
     if (contexto || !params?.grupo) {
       return;
@@ -796,87 +704,8 @@ export default function AsistenciaScreen() {
     void openContextoFromParamsIfOnlyGroup();
   }, [openContextoFromParamsIfOnlyGroup]);
 
+
   if (!contexto) {
-    return (
-      <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
-        <AsistenciaSesionesConfigModal
-          visible={configModalVisible}
-          submitting={configSaving}
-          sesiones={sesiones}
-          pendingDeleteSesionIds={pendingDeleteSesionIds}
-          onClose={() => {
-            if (!configSaving) {
-              setConfigModalVisible(false);
-            }
-          }}
-          onCreateManual={handleCreateSesionManual}
-          onGenerateMonth={handleGenerateMonth}
-          onDeleteSesion={handleDeleteSesion}
-        />
-
-        <View className="relative mb-4 px-1">
-          <View className="relative">
-            <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
-            <View className="rounded-[30px] border-[4px] border-black bg-[#EBD7BF] px-5 py-3.5">
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.9}
-                onPress={handleBackNavigation}
-                className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
-              >
-                <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
-              </TouchableOpacity>
-              <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Asistencia</CustomText>
-              <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-                Selecciona un grupo para continuar
-              </CustomText>
-            </View>
-          </View>
-        </View>
-
-        <View className="flex-1 rounded-[28px] border-[4px] border-black bg-[#F7F0E4] p-4">
-          {selectorLoading ? (
-            <View className="flex-1 items-center justify-center">
-              <ActivityIndicator color="#000" />
-            </View>
-          ) : (
-            <FlatList
-              data={gruposDisponibles}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    void selectGrupoDesdeLista(item);
-                  }}
-                  className="mb-3 rounded-2xl border-[3px] border-black bg-[#FDF9F1] p-4"
-                >
-                  <CustomText className="text-base font-black text-black">{item.nombre}</CustomText>
-                  <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-                    {item.carrera_nombre} • {item.anio_nombre}
-                  </CustomText>
-                  <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-                    {item.asignatura_nombre} • Turno: {item.turno || 'Sin turno'}
-                  </CustomText>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <View className="mt-10 items-center">
-                  <CustomText className="text-center text-base font-bold text-[#5E5045]">
-                    No tienes grupos disponibles para asistencia.
-                  </CustomText>
-                </View>
-              }
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 24 }}
-            />
-          )}
-        </View>
-      </View>
-    );
-  }
-
-  if (loading) {
     return (
       <View className="flex-1 bg-[#C5A07D] items-center justify-center">
         <ActivityIndicator color="#000" />
@@ -884,22 +713,25 @@ export default function AsistenciaScreen() {
     );
   }
 
-  const renderInfoHeader = () => (
-    <View className="mb-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] p-3">
-      {[
-        ['Area de Conocimiento', contexto.carrera_nombre],
-        ['Carrera', contexto.carrera_nombre],
-        ['Turno', contexto.turno || 'Sin turno'],
-        ['Grupo', contexto.grupo_nombre],
-        ['Asignatura', contexto.asignatura_nombre],
-      ].map(([label, value]) => (
-        <View key={label} className="flex-row justify-between border-b border-[#DCCEC2] py-1">
-          <CustomText className="text-xs font-black text-[#6B5A4A]">{label}</CustomText>
-          <CustomText className="text-xs font-semibold text-black">{value}</CustomText>
-        </View>
-      ))}
-    </View>
-  );
+  const renderInfoHeader = () => {
+    const ctx = contexto!;
+    return (
+      <View className="mb-3 rounded-2xl border-[3px] border-black bg-[#FFF7E8] p-3">
+        {[
+          ['Area de Conocimiento', ctx.carrera_nombre],
+          ['Carrera', ctx.carrera_nombre],
+          ['Turno', ctx.turno || 'Sin turno'],
+          ['Grupo', ctx.grupo_nombre],
+          ['Asignatura', ctx.asignatura_nombre],
+        ].map(([label, value]) => (
+          <View key={label} className="flex-row justify-between border-b border-[#DCCEC2] py-1">
+            <CustomText className="text-xs font-black text-[#6B5A4A]">{label}</CustomText>
+            <CustomText className="text-xs font-semibold text-black">{value}</CustomText>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   if (isWeb || params?.modo === 'web') {
     const fixedWidth = Math.max(460, Math.min(560, width * 0.42));
@@ -928,7 +760,7 @@ export default function AsistenciaScreen() {
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.9}
-                onPress={handleBackNavigation}
+                onPress={navigation.goBack}
                 className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
               >
                 <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
@@ -968,30 +800,37 @@ export default function AsistenciaScreen() {
                 </View>
 
                 <ScrollView>
-                  {estudiantes.map((e, index) => {
-                    const resumen = resumenPorEstudiante[e.id] ?? { asistencias: 0, porcentaje: 0 };
-                    return (
-                      <View
-                        key={`left-${e.id}`}
-                        style={{ height: ROW_HEIGHT }}
-                        className="flex-row items-center border-b border-[#EADFD4] px-2"
-                      >
-                        <CustomText className="w-10 text-xs font-bold text-black">{index + 1}</CustomText>
-                        <CustomText className="w-24 text-xs font-semibold text-black">
-                          {e.identificacion || '--'}
-                        </CustomText>
-                        <CustomText className="flex-1 text-xs font-semibold text-black">
-                          {e.nombre_completo}
-                        </CustomText>
-                        <CustomText className="w-16 text-center text-xs font-black text-black">
-                          {resumen.asistencias}
-                        </CustomText>
-                        <CustomText className="w-12 text-center text-xs font-black text-black">
-                          {Math.round(resumen.porcentaje)}
-                        </CustomText>
-                      </View>
-                    );
-                  })}
+                  {loading && estudiantes.length === 0 ? (
+                    <View className="py-8 items-center justify-center">
+                      <ActivityIndicator color="#000" />
+                      <CustomText className="mt-2 text-xs font-bold text-[#6B5A4A]">Cargando...</CustomText>
+                    </View>
+                  ) : (
+                    estudiantes.map((e, index) => {
+                      const resumen = resumenPorEstudiante[e.id] ?? { asistencias: 0, porcentaje: 0 };
+                      return (
+                        <View
+                          key={`left-${e.id}`}
+                          style={{ height: ROW_HEIGHT }}
+                          className="flex-row items-center border-b border-[#EADFD4] px-2"
+                        >
+                          <CustomText className="w-10 text-xs font-bold text-black">{index + 1}</CustomText>
+                          <CustomText className="w-24 text-xs font-semibold text-black">
+                            {e.identificacion || '--'}
+                          </CustomText>
+                          <CustomText className="flex-1 text-xs font-semibold text-black">
+                            {e.nombre_completo}
+                          </CustomText>
+                          <CustomText className="w-16 text-center text-xs font-black text-black">
+                            {resumen.asistencias}
+                          </CustomText>
+                          <CustomText className="w-12 text-center text-xs font-black text-black">
+                            {Math.round(resumen.porcentaje)}
+                          </CustomText>
+                        </View>
+                      );
+                    })
+                  )}
                 </ScrollView>
               </View>
 
@@ -1141,7 +980,7 @@ export default function AsistenciaScreen() {
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.9}
-              onPress={handleBackNavigation}
+              onPress={navigation.goBack}
               className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
             >
               <CustomText className="text-xs font-black text-black">{'<- Volver'}</CustomText>
@@ -1187,6 +1026,18 @@ export default function AsistenciaScreen() {
               data={estudiantes}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: 18 }}
+              ListEmptyComponent={
+                loading ? (
+                  <View className="py-10 items-center justify-center">
+                    <ActivityIndicator color="#000" />
+                    <CustomText className="mt-2 text-sm font-semibold text-[#6B5A4A]">Cargando asistencia...</CustomText>
+                  </View>
+                ) : (
+                  <View className="py-10 items-center justify-center">
+                    <CustomText className="text-sm font-semibold text-[#6B5A4A]">Sin estudiantes</CustomText>
+                  </View>
+                )
+              }
               renderItem={({ item, index }) => {
                 const resumen = resumenPorEstudiante[item.id] ?? { asistencias: 0, porcentaje: 0 };
                 return (
