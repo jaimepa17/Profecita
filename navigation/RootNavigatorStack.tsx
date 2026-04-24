@@ -47,7 +47,7 @@ export default function RootNavigatorStack({ session }: RootNavigatorProps) {
       initialRouteName={session ? 'Home' : 'Auth'}
       screenOptions={{
         headerShown: false,
-        gestureEnabled: true,
+        gestureEnabled: false,
         gestureDirection: 'horizontal',
         cardStyleInterpolator: forHorizontalSlide,
         transitionSpec: getTransitionSpec(),

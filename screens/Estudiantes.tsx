@@ -12,6 +12,7 @@ import AlertModal, {
 import EstudianteFormModal, {
   type EstudianteGroupOption,
 } from '@/components/EstudianteFormModal';
+import { ListLoaderSkeleton } from '@/components/ListLoaderSkeleton';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 import { supabase } from '@/lib/supabase';
@@ -519,32 +520,7 @@ export default function EstudiantesScreen() {
     );
   };
 
-  if (loading && !initialLoaded) {
-    return (
-      <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
-        <View className="relative mb-4 px-1">
-          <View className="relative">
-            <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
-            <View className="rounded-[30px] border-[4px] border-black bg-[#EBD7BF] px-5 py-3.5">
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.9}
-                onPress={navigation.goBack}
-                className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
-              >
-                <CustomText className="text-xs font-black text-black">← Volver</CustomText>
-              </TouchableOpacity>
-              <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Estudiantes</CustomText>
-              <CustomText className="mt-1 text-sm font-semibold text-[#5E5045]">
-                Crea y asigna rápido desde una sola libreta.
-              </CustomText>
-            </View>
-          </View>
-        </View>
-        <View className="flex-1"></View>
-      </View>
-    );
-  }
+
 
   return (
     <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
@@ -641,34 +617,38 @@ export default function EstudiantesScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             renderItem={renderEstudiante}
             ListEmptyComponent={
-              <View className="mt-8 items-center justify-center px-1">
-                <View className="relative w-full">
-                  <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[32px] bg-black" />
-                  <View className="items-center rounded-[32px] border-[3px] border-black bg-[#FDF9F1] px-6 py-10">
-                    <View className="mb-2">
-                      <StudentSticker size={64} />
-                    </View>
-                    <CustomText className="mt-4 text-center text-2xl font-black text-black">
-                      Aun no hay estudiantes
-                    </CustomText>
-                    <CustomText className="mt-3 text-center text-base font-medium leading-6 text-[#5F5146]">
-                      Crea tu primer estudiante y asignalo a un grupo para empezar la libreta.
-                    </CustomText>
-
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      activeOpacity={0.9}
-                      disabled={creating || loadingGrupoOptions}
-                      onPress={openCreateEstudiante}
-                      className="mt-6 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-6 py-4"
-                    >
-                      <CustomText className="text-base font-black text-black">
-                        + Crear y asignar estudiante
+              loading ? (
+                <ListLoaderSkeleton />
+              ) : (
+                <View className="mt-8 items-center justify-center px-1">
+                  <View className="relative w-full">
+                    <View className="absolute inset-0 translate-x-2 translate-y-2 rounded-[32px] bg-black" />
+                    <View className="items-center rounded-[32px] border-[3px] border-black bg-[#FDF9F1] px-6 py-10">
+                      <View className="mb-2">
+                        <StudentSticker size={64} />
+                      </View>
+                      <CustomText className="mt-4 text-center text-2xl font-black text-black">
+                        Aun no hay estudiantes
                       </CustomText>
-                    </TouchableOpacity>
+                      <CustomText className="mt-3 text-center text-base font-medium leading-6 text-[#5F5146]">
+                        Crea tu primer estudiante y asignalo a un grupo para empezar la libreta.
+                      </CustomText>
+  
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        activeOpacity={0.9}
+                        disabled={creating || loadingGrupoOptions}
+                        onPress={openCreateEstudiante}
+                        className="mt-6 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-6 py-4"
+                      >
+                        <CustomText className="text-base font-black text-black">
+                          + Crear y asignar estudiante
+                        </CustomText>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
+              )
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{

@@ -24,6 +24,7 @@ import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/compo
 import { BREAKPOINTS } from '@/lib/constants/breakpoints';
 import { ClipboardSticker } from '@/components/ClipboardSticker';
 import { MemoSticker } from '@/components/MemoSticker';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { GroupSticker } from '@/components/GroupSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Reportes'>;
@@ -846,11 +847,16 @@ export default function Reportes() {
                   )}
 
                   {loadingReporte ? (
-                    <View className="mt-4 items-center">
-                      <ActivityIndicator size="small" color="#000" />
-                      <Text className="mt-2 text-sm font-semibold text-[#5E5045]">
-                        Cargando reporte...
-                      </Text>
+                    <View className="mt-4 gap-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <View key={`sk-${i}`} className="border-b border-[#DCCEC2] py-3 flex-row items-center justify-between">
+                          <View className="flex-1">
+                            <InlineSkeleton width={`${Math.floor(Math.random() * 40 + 40)}%`} height={18} />
+                            <InlineSkeleton width="30%" height={12} />
+                          </View>
+                          <InlineSkeleton width={40} height={20} />
+                        </View>
+                      ))}
                     </View>
                   ) : reporte.actividades.length === 0 ? (
                     <View className="mt-4 rounded-2xl border-[3px] border-black bg-[#FFF7E8] px-4 py-6 items-center">
@@ -900,11 +906,13 @@ export default function Reportes() {
               )}
 
               {loadingReporte && !reporte && (
-                <View className="mt-4 items-center">
-                  <ActivityIndicator size="small" color="#000" />
-                  <Text className="mt-2 text-sm font-semibold text-[#5E5045]">
-                    Cargando reporte...
-                  </Text>
+                <View className="mt-4 gap-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <View key={`sk-${i}`} className="border-b border-[#DCCEC2] py-3 flex-row items-center justify-between">
+                       <InlineSkeleton width="60%" height={16} />
+                       <InlineSkeleton width="20%" height={16} />
+                    </View>
+                  ))}
                 </View>
               )}
             </ScrollView>

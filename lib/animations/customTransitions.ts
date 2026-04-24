@@ -9,9 +9,13 @@ import {
   Extrapolate,
 } from 'react-native-reanimated';
 
-const TIMING_CONFIG = {
-  duration: Platform.OS === 'ios' ? 350 : 280,
-  easing: Easing.bezierFn(0.2, 0, 0, 1),
+const SPRING_CONFIG = {
+  stiffness: 1000,
+  damping: 500,
+  mass: 3,
+  overshootClamping: true,
+  restDisplacementThreshold: 0.01,
+  restSpeedThreshold: 0.01,
 };
 
 export const forHorizontalSlide = ({
@@ -65,12 +69,12 @@ export const forHorizontalSlide = ({
 
 export const getTransitionSpec = () => ({
   open: {
-    animation: 'timing' as const,
-    config: TIMING_CONFIG,
+    animation: 'spring' as const,
+    config: SPRING_CONFIG,
   },
   close: {
-    animation: 'timing' as const,
-    config: TIMING_CONFIG,
+    animation: 'spring' as const,
+    config: SPRING_CONFIG,
   },
 });
 
@@ -87,11 +91,11 @@ export const useSharedTransition = () => {
   }));
 
   const startTransition = () => {
-    progress.value = withTiming(1, TIMING_CONFIG);
+    progress.value = withTiming(1, { duration: 300 }); // internal shared val uses timing for simplicity, spring is for react-navigation overall transit
   };
 
   const resetTransition = () => {
-    progress.value = withTiming(0, TIMING_CONFIG);
+    progress.value = withTiming(0, { duration: 300 });
   };
 
   return { animatedStyle, startTransition, resetTransition };

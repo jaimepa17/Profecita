@@ -7,12 +7,14 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
+import { ListLoaderSkeleton } from '@/components/ListLoaderSkeleton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import { Anio, createAnio, deleteAnio, listAniosByCarrera } from '@/lib/services/aniosService';
 import { getAniosStatsByIds, type AnioStats } from '@/lib/services/statsService';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { BooksSticker } from '@/components/BooksSticker';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Anios'>;
@@ -206,7 +208,10 @@ export default function AniosScreen() {
               </CustomText>
 
               {showStatsLoading ? (
-                <CustomText className="mt-1 text-base font-semibold text-black">Cargando datos...</CustomText>
+                <View className="gap-1 mt-1">
+                  <InlineSkeleton width="85%" />
+                  <InlineSkeleton width="45%" />
+                </View>
               ) : (
                 <>
                   <CustomText className="mt-1 text-base font-semibold text-black">
@@ -247,29 +252,7 @@ export default function AniosScreen() {
     );
   };
 
-  if (loading && !initialLoaded) {
-    return (
-      <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
-        <View className="relative mb-4 px-1">
-          <View className="relative">
-            <View className="absolute inset-0 translate-x-1.5 translate-y-2 rounded-[30px] bg-black" />
-            <View className="rounded-[30px] border-[4px] border-black bg-[#EBD7BF] px-5 py-3.5">
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.9}
-                onPress={navigation.goBack}
-                className="self-start rounded-full border-[3px] border-black bg-white px-3 py-1"
-              >
-                <CustomText className="text-xs font-black text-black">← Volver</CustomText>
-              </TouchableOpacity>
-              <CustomText className="mt-3 text-2xl font-black text-[#1E140D]">Años de {carrera.nombre}</CustomText>
-            </View>
-          </View>
-        </View>
-        <View className="flex-1"></View>
-      </View>
-    );
-  }
+
 
   return (
     <View className="flex-1 bg-[#C5A07D] px-4 pt-12 pb-4">
@@ -345,21 +328,25 @@ export default function AniosScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             renderItem={renderItem}
             ListEmptyComponent={
-              <View className="mt-8 items-center px-3">
-                <BooksSticker size={64} />
-                <CustomText className="mt-3 text-center text-xl font-black text-black">
-                  Aún no hay años creados
-                </CustomText>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  activeOpacity={0.9}
-                  disabled={creating}
-                  onPress={() => setCreateVisible(true)}
-                  className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
-                >
-                  <CustomText className="text-base font-black text-black">+ Crear primer año</CustomText>
-                </TouchableOpacity>
-              </View>
+              loading ? (
+                <ListLoaderSkeleton />
+              ) : (
+                <View className="mt-8 items-center px-3">
+                  <BooksSticker size={64} />
+                  <CustomText className="mt-3 text-center text-xl font-black text-black">
+                    Aún no hay años creados
+                  </CustomText>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    activeOpacity={0.9}
+                    disabled={creating}
+                    onPress={() => setCreateVisible(true)}
+                    className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
+                  >
+                    <CustomText className="text-base font-black text-black">+ Crear primer año</CustomText>
+                  </TouchableOpacity>
+                </View>
+              )
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{

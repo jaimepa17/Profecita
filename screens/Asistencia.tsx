@@ -14,6 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CustomText } from '@/components/CustomText';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 import type { RootStackParamList } from '@/types/navigation';
 import {
   type AsistenciaJustificacion,
@@ -801,9 +802,16 @@ export default function AsistenciaScreen() {
 
                 <ScrollView>
                   {loading && estudiantes.length === 0 ? (
-                    <View className="py-8 items-center justify-center">
-                      <ActivityIndicator color="#000" />
-                      <CustomText className="mt-2 text-xs font-bold text-[#6B5A4A]">Cargando...</CustomText>
+                    <View className="py-4 px-2 gap-4">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <View key={`sk-${i}`} className="flex-row items-center justify-between" style={{ height: ROW_HEIGHT - 16 }}>
+                          <InlineSkeleton width="60%" height={16} />
+                          <View className="flex-row gap-2">
+                            <InlineSkeleton width={24} height={16} />
+                            <InlineSkeleton width={20} height={16} />
+                          </View>
+                        </View>
+                      ))}
                     </View>
                   ) : (
                     estudiantes.map((e, index) => {
@@ -1028,9 +1036,14 @@ export default function AsistenciaScreen() {
               contentContainerStyle={{ paddingBottom: 18 }}
               ListEmptyComponent={
                 loading ? (
-                  <View className="py-10 items-center justify-center">
-                    <ActivityIndicator color="#000" />
-                    <CustomText className="mt-2 text-sm font-semibold text-[#6B5A4A]">Cargando asistencia...</CustomText>
+                  <View className="py-4 flex-col gap-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <View key={`skr-${i}`} className="flex-row gap-8 pl-4" style={{ height: ROW_HEIGHT - 16 }}>
+                        <InlineSkeleton width={24} height={24} />
+                        <InlineSkeleton width={24} height={24} />
+                        <InlineSkeleton width={24} height={24} />
+                      </View>
+                    ))}
                   </View>
                 ) : (
                   <View className="py-10 items-center justify-center">

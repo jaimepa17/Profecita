@@ -9,6 +9,7 @@ import ActividadFormModal from '@/components/ActividadFormModal';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { useRealtimeCollection } from '@/lib/realtime';
 import {
@@ -925,9 +926,17 @@ export default function ParcialesConfigScreen() {
                         )}
 
                         {loadingActividades ? (
-                          <CustomText className="mt-4 text-sm font-semibold text-[#5E5045]">
-                            Cargando actividades...
-                          </CustomText>
+                          <View className="mt-4 gap-3">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                              <View key={`sk-${i}`} className="rounded-2xl border-[3px] border-[#DCCEC2] bg-[#FFFdf8] px-4 py-3 flex-row items-center justify-between">
+                                <View className="flex-1">
+                                  <InlineSkeleton width={120} height={20} />
+                                  <InlineSkeleton width={80} height={16} />
+                                </View>
+                                <InlineSkeleton width={60} height={24} />
+                              </View>
+                            ))}
+                          </View>
                         ) : actividades.length > 0 ? (
                           <View className="mt-4">
                             {actividades.map((item, index) => (

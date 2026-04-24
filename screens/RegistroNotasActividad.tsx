@@ -26,6 +26,7 @@ import { listGrupoEstudiantesByGrupo } from '@/lib/services/grupoEstudiantesServ
 import { listNotasByActividad, createNota, updateNota, type Nota } from '@/lib/services/notasService';
 import EstudianteNotaCard from '@/components/EstudianteNotaCard';
 import AlertModal, { type AlertModalPayload, type AlertModalType } from '@/components/AlertModal';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RegistroNotasActividad'>;
 
@@ -632,7 +633,11 @@ export default function RegistroNotasActividad() {
               ) : null}
 
               {loadingGrupoData ? (
-                <Text className="mt-3 text-sm font-semibold text-[#5E5045]">Cargando estudiantes y actividades...</Text>
+                <View className="mt-3 rounded-2xl border-[3px] border-[#DCCEC2] bg-[#FFFdf8] px-4 py-3 flex-row flex-wrap gap-2">
+                   <InlineSkeleton width={80} height={24} />
+                   <InlineSkeleton width={120} height={24} />
+                   <InlineSkeleton width={90} height={24} />
+                </View>
               ) : (
                 renderChip(
                   'Actividad',
@@ -656,7 +661,16 @@ export default function RegistroNotasActividad() {
               ) : null}
 
               {loadingNotas ? (
-                <Text className="mt-4 text-sm font-semibold text-[#5E5045]">Cargando notas...</Text>
+                <View className="mt-4 gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <View key={`sk-${i}`} className="rounded-2xl border-[3px] border-[#DCCEC2] bg-[#FFFdf8] px-4 py-3 flex-row items-center justify-between">
+                      <View className="flex-1">
+                        <InlineSkeleton width={`${Math.floor(Math.random() * 30 + 40)}%`} height={20} />
+                      </View>
+                      <InlineSkeleton width={80} height={28} />
+                    </View>
+                  ))}
+                </View>
               ) : actividadSeleccionada && estudiantesGrupo.length > 0 ? (
                 <View
                   className="mt-4 overflow-hidden rounded-2xl border-[3px] border-black bg-[#F5EADB]"

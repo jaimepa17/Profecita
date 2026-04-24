@@ -17,6 +17,7 @@ import ConfirmActionModal from '../components/ConfirmActionModal';
 import { CatAvatar } from '@/components/CatAvatar';
 import { CatSticker } from '@/components/CatSticker';
 import { NotebookSticker } from '@/components/NotebookSticker';
+import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -399,7 +400,10 @@ export default function Home() {
               </Text>
 
               {showStatsLoading ? (
-                <Text className="mt-1 text-base font-semibold text-black">Cargando datos...</Text>
+                <View className="gap-1 mt-1">
+                  <InlineSkeleton width="85%" />
+                  <InlineSkeleton width="45%" />
+                </View>
               ) : (
                 <>
                   <Text className="mt-1 text-base font-semibold text-black">
