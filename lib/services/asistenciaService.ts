@@ -466,63 +466,84 @@ export async function listGruposAsistenciaByProfesor(): Promise<
     return user;
   }
 
-  // Single join query: grupos → asignaturas → anios → carreras
-  // This replaces the previous N+1 pattern (4 sequential queries)
-  const { data, error } = await supabase
-    .from('grupos')
-    .select(`
-      id,
-      nombre,
-      turno,
-      asignatura:asignaturas!inner(
-        id,
-        nombre,
-        anio:anios!inner(
-          id,
-          nombre,
-          carrera:carreras!inner(
-            id,
-            nombre
-          )
-        )
-      )
-    `)
-    .eq('asignatura.anio.carrera.profesor_id', user.data)
-    .order('created_at', { ascending: false });
+  // Fetch groups, join through FKs to filter by user's carreras
+  // Step 1: Get carreras owned by the user
+  const { data: carrerasData, error: carrerasError } = await supabase
+    .from('carreras')
+    .select('id, nombre')
+    .eq('profesor_id', user.data);
 
-  if (error) {
-    return fail('No se pudieron cargar los grupos.', error.message);
+  if (carrerasError) {
+    return fail('No se pudieron cargar las carreras.', carrerasError.message);
   }
 
-  // The Supabase join returns `asignatura` as an array even for FK relationships
-  const raw = data as Array<{
-    id: string;
-    nombre: string;
-    turno: string | null;
-    asignatura: Array<{
-      id: string;
-      nombre: string;
-      anio: Array<{
-        id: string;
-        nombre: string;
-        carrera: Array<{
-          id: string;
-          nombre: string;
-        }>;
-      }>;
-    }>;
-  }> | null;
-
-  if (!raw || raw.length === 0) {
+  const carreras = (carrerasData as { id: string; nombre: string }[]) ?? [];
+  if (carreras.length === 0) {
     return ok([]);
   }
+  const carrerasById = new Map(carreras.map((c) => [c.id, c]));
 
-  const result: GrupoAsistenciaOption[] = raw
+  // Step 2: Get anios that belong to user's carreras
+  const { data: aniosData, error: aniosError } = await supabase
+    .from('anios')
+    .select('id, nombre, carrera_id')
+    .in('carrera_id', carreras.map((c) => c.id));
+
+  if (aniosError) {
+    return fail('No se pudieron cargar los años.', aniosError.message);
+  }
+
+  const anios = (aniosData as { id: string; nombre: string; carrera_id: string }[]) ?? [];
+  if (anios.length === 0) {
+    return ok([]);
+  }
+  const aniosById = new Map(anios.map((a) => [a.id, a]));
+
+  // Step 3: Get asignaturas that belong to user's anios
+  const { data: asignaturasData, error: asignaturasError } = await supabase
+    .from('asignaturas')
+    .select('id, nombre, anio_id')
+    .in('anio_id', anios.map((a) => a.id));
+
+  if (asignaturasError) {
+    return fail('No se pudieron cargar las asignaturas.', asignaturasError.message);
+  }
+
+  const asignaturas =
+    (asignaturasData as { id: string; nombre: string; anio_id: string }[]) ?? [];
+  if (asignaturas.length === 0) {
+    return ok([]);
+  }
+  const asignaturasById = new Map(asignaturas.map((a) => [a.id, a]));
+
+  // Step 4: Get only grupos that belong to user's asignaturas
+  const { data: gruposData, error: gruposError } = await supabase
+    .from('grupos')
+    .select('id, nombre, turno, asignatura_id')
+    .in('asignatura_id', asignaturas.map((a) => a.id))
+    .order('created_at', { ascending: false });
+
+  if (gruposError) {
+    return fail('No se pudieron cargar los grupos.', gruposError.message);
+  }
+
+  const grupos =
+    (gruposData as {
+      id: string;
+      nombre: string;
+      turno: string | null;
+      asignatura_id: string;
+    }[]) ?? [];
+
+  // Build result
+  const result: GrupoAsistenciaOption[] = grupos
     .map((grupo) => {
-      const asignatura = grupo.asignatura?.[0];
-      const anio = asignatura?.anio?.[0];
-      const carrera = anio?.carrera?.[0];
-      if (!asignatura || !anio || !carrera) return null;
+      const asignatura = asignaturasById.get(grupo.asignatura_id);
+      if (!asignatura) return null;
+      const anio = aniosById.get(asignatura.anio_id);
+      if (!anio) return null;
+      const carrera = carrerasById.get(anio.carrera_id);
+      if (!carrera) return null;
 
       return {
         id: grupo.id,
