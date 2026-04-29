@@ -7,8 +7,6 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import GrupoFormModal from '@/components/GrupoFormModal';
-import { ListLoaderSkeleton } from '@/components/ListLoaderSkeleton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import { Anio } from '@/lib/services/aniosService';
 import { Asignatura } from '@/lib/services/asignaturasService';
@@ -18,6 +16,7 @@ import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlig
 import { useRealtimeCollection } from '@/lib/realtime';
 import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { GroupSticker } from '@/components/GroupSticker';
+import { getCached, hasCache, setCache } from '@/lib/services/dataPrefetchService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Grupos'>;
 type RouteProps = RouteProp<RootStackParamList, 'Grupos'>;
@@ -42,64 +41,32 @@ export default function GruposScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { carrera, anio, asignatura } = route.params;
-  const [grupos, setGrupos] = useState<Grupo[]>([]);
-  const [statsByGrupo, setStatsByGrupo] = useState<Record<string, GrupoStats>>({});
+  const gruposCacheKey = `grupos:${asignatura.id}`;
+  const statsCacheKey = `grupos_stats:${asignatura.id}`;
+  const [grupos, setGrupos] = useState<Grupo[]>(
+    () => getCached<Grupo[]>(gruposCacheKey) ?? [],
+  );
+  const [statsByGrupo, setStatsByGrupo] = useState<Record<string, GrupoStats>>(
+    () => getCached<Record<string, GrupoStats>>(statsCacheKey) ?? {},
+  );
   const [statsLoadingByGrupo, setStatsLoadingByGrupo] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Grupo | null>(null);
   const { run: runCreate, isRunning: creating } = useSingleFlight();
   const { run: runDelete, isRunning: isDeleting } = useKeyedSingleFlight<string>();
 
   const cargarGrupos = useCallback(async () => {
-    // Solo mostrar loader si es la carga inicial
-    if (!initialLoaded) {
-      setLoading(true);
-    }
-
     const result = await listGruposByAsignatura(asignatura.id);
 
     if (!result.ok) {
       Alert.alert('No se pudieron cargar los grupos', result.error);
       setGrupos([]);
-      setLoading(false);
-      setInitialLoaded(true);
       return;
     }
 
     setGrupos(result.data);
-    await AsyncStorage.setItem(`grupos_${asignatura.id}_cache`, JSON.stringify(result.data));
-    setLoading(false);
-    setInitialLoaded(true);
-  }, [asignatura.id, initialLoaded]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const bootstrap = async () => {
-      // Cargar desde cache primero
-      try {
-        const cached = await AsyncStorage.getItem(`grupos_${asignatura.id}_cache`);
-        if (cached && mounted) {
-          setGrupos(JSON.parse(cached));
-          setInitialLoaded(true);
-          setLoading(false);
-        }
-      } catch (e) {
-        // Ignorar errores de cache
-      }
-
-      // Luego cargar desde API (background update)
-      await cargarGrupos();
-    };
-
-    void bootstrap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cargarGrupos]);
+    setCache(gruposCacheKey, result.data);
+  }, [asignatura.id, gruposCacheKey]);
 
   const crearNuevoGrupo = async (nombre: string, turno: string | null) => {
     await runCreate(async () => {
@@ -319,7 +286,7 @@ export default function GruposScreen() {
 
       <View className="relative flex-1">
         <View className="absolute inset-x-0 bottom-[-4px] h-[5px] rounded-full bg-black/90" />
-        <View className="flex-1 overflow-hidden rounded-[34px] border-[4px] border-black bg-[#F7F0E4]">
+        <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden px-0.5 pb-0.5">
           <PaperGrid />
 
           <View className="px-5 pt-4">
@@ -333,25 +300,21 @@ export default function GruposScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             renderItem={renderItem}
             ListEmptyComponent={
-              loading ? (
-                <ListLoaderSkeleton />
-              ) : (
-                <View className="mt-8 items-center px-3">
-                  <GroupSticker size={64} />
-                  <CustomText className="mt-3 text-center text-xl font-black text-black">
-                    Aún no hay grupos creados
-                  </CustomText>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    activeOpacity={0.9}
-                    disabled={creating}
-                    onPress={() => setCreateVisible(true)}
-                    className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
-                  >
-                    <CustomText className="text-base font-black text-black">+ Crear primer grupo</CustomText>
-                  </TouchableOpacity>
-                </View>
-              )
+              <View className="mt-8 items-center px-3">
+                <GroupSticker size={64} />
+                <CustomText className="mt-3 text-center text-xl font-black text-black">
+                  Aún no hay grupos creados
+                </CustomText>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.9}
+                  disabled={creating}
+                  onPress={() => setCreateVisible(true)}
+                  className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
+                >
+                  <CustomText className="text-base font-black text-black">+ Crear primer grupo</CustomText>
+                </TouchableOpacity>
+              </View>
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{

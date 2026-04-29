@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { getCurrentUserId } from './_auth';
 import { fail, ok, ServiceResult } from './_result';
+import { validateNombre } from './validation';
 
 export type Carrera = {
   id: string;
@@ -16,17 +17,6 @@ export type CreateCarreraInput = {
 export type UpdateCarreraInput = {
   nombre?: string;
 };
-
-function validateNombre(nombre?: string): string | null {
-  const clean = nombre?.trim();
-  if (!clean) {
-    return 'El nombre de la carrera es obligatorio.';
-  }
-  if (clean.length > 100) {
-    return 'El nombre de la carrera no puede superar 100 caracteres.';
-  }
-  return null;
-}
 
 export async function listCarreras(): Promise<ServiceResult<Carrera[]>> {
   const { data, error } = await supabase
@@ -97,7 +87,7 @@ export async function updateCarrera(
   const updates: UpdateCarreraInput = {};
 
   if (input.nombre !== undefined) {
-    const validation = validateNombre(input.nombre);
+    const validation = validateNombre(input.nombre, 'Nombre de la carrera', 100);
     if (validation) {
       return fail(validation);
     }

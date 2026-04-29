@@ -19,7 +19,6 @@ import { CatSticker } from '@/components/CatSticker';
 import { NotebookSticker } from '@/components/NotebookSticker';
 import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { supabase } from '@/lib/supabase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createCarrera,
   deleteCarrera,
@@ -30,6 +29,7 @@ import { getCarrerasStatsByIds, type CarreraStats } from '@/lib/services/statsSe
 import { useRealtimeCollection, useRealtimeTable } from '@/lib/realtime';
 import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlight';
 import { listEstudiantesByProfesor } from '@/lib/services/estudiantesService';
+import { getCached, PrefetchKeys } from '@/lib/services/dataPrefetchService';
 
 type Carrera = CarreraModel;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -55,11 +55,13 @@ const PaperGrid = () => (
 
 export default function Home() {
   const navigation = useNavigation<NavigationProp>();
-  const [carreras, setCarreras] = useState<Carrera[]>([]);
-  const [statsByCarrera, setStatsByCarrera] = useState<Record<string, CarreraStats>>({});
+  const [carreras, setCarreras] = useState<Carrera[]>(
+    () => getCached<Carrera[]>(PrefetchKeys.CARRERAS) ?? [],
+  );
+  const [statsByCarrera, setStatsByCarrera] = useState<Record<string, CarreraStats>>(
+    () => getCached<Record<string, CarreraStats>>(PrefetchKeys.CARRERAS_STATS) ?? {},
+  );
   const [statsLoadingByCarrera, setStatsLoadingByCarrera] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [accountPanelVisible, setAccountPanelVisible] = useState(false);
   const [createCarreraVisible, setCreateCarreraVisible] = useState(false);
   const [quickActionsVisible, setQuickActionsVisible] = useState(false);
@@ -74,26 +76,16 @@ export default function Home() {
     useKeyedSingleFlight<string>();
 
   const cargarCarreras = useCallback(async () => {
-    // Solo mostrar loader si es la carga inicial
-    if (!initialLoaded) {
-      setLoading(true);
-    }
-
     const result = await listCarreras();
 
     if (!result.ok) {
       Alert.alert('No se pudieron cargar las carreras', result.error);
       setCarreras([]);
-      setLoading(false);
-      setInitialLoaded(true);
       return;
     }
 
     setCarreras(result.data);
-    await AsyncStorage.setItem('carreras_cache', JSON.stringify(result.data));
-    setLoading(false);
-    setInitialLoaded(true);
-  }, [initialLoaded]);
+  }, []);
 
   const incrementStatsVersion = useCallback(() => {
     setStatsVersion(v => v + 1);
@@ -235,25 +227,8 @@ export default function Home() {
     let mounted = true;
 
     const bootstrap = async () => {
-      // Cargar desde cache primero
-      try {
-        const cached = await AsyncStorage.getItem('carreras_cache');
-        if (cached && mounted) {
-          setCarreras(JSON.parse(cached));
-          setInitialLoaded(true);
-          setLoading(false);
-        }
-      } catch (e) {
-        // Ignorar errores de cache
-      }
-
-      // Luego cargar desde API (background update)
-      await cargarCarreras();
-
       const { data } = await supabase.auth.getSession();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       setRealtimeUserId(data.session?.user?.id ?? null);
       setUserEmail(data.session?.user?.email ?? undefined);
@@ -264,7 +239,7 @@ export default function Home() {
     return () => {
       mounted = false;
     };
-  }, [cargarCarreras]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -274,6 +249,15 @@ export default function Home() {
         setEstudianteIds([]);
         return;
       }
+
+      // Usar cache de prefetch si está disponible
+      const cached = getCached<string[]>(PrefetchKeys.ESTUDIANTES_IDS);
+      if (cached && mounted) {
+        setEstudianteIds(cached);
+        return;
+      }
+
+      // Fallback: cargar desde API
       const result = await listEstudiantesByProfesor(realtimeUserId);
       if (!mounted) return;
       if (result.ok) {
@@ -617,7 +601,7 @@ export default function Home() {
 
       <View className="relative flex-1">
         <View className="absolute inset-x-0 bottom-[-4px] h-[5px] rounded-full bg-black/90" />
-        <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden">
+        <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden px-0.5 pb-0.5">
           <PaperGrid />
 
           <View className="px-5 pt-4">

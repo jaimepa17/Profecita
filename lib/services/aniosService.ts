@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { ServiceResult, fail, ok } from './_result';
+import { validateNombre, validateRequiredId } from './validation';
 
 export type Anio = {
   id: string;
@@ -17,17 +18,6 @@ export type UpdateAnioInput = {
   nombre?: string;
 };
 
-function validateNombre(nombre?: string): string | null {
-  const clean = nombre?.trim();
-  if (!clean) {
-    return 'El nombre del año es obligatorio.';
-  }
-  if (clean.length > 50) {
-    return 'El nombre del año no puede superar 50 caracteres.';
-  }
-  return null;
-}
-
 export async function listAnios(): Promise<ServiceResult<Anio[]>> {
   const { data, error } = await supabase
     .from('anios')
@@ -42,9 +32,8 @@ export async function listAnios(): Promise<ServiceResult<Anio[]>> {
 }
 
 export async function listAniosByCarrera(carreraId: string): Promise<ServiceResult<Anio[]>> {
-  if (!carreraId?.trim()) {
-    return fail('El id de la carrera es obligatorio.');
-  }
+  const idErr = validateRequiredId(carreraId, 'carrera');
+  if (idErr) return fail(idErr);
 
   const { data, error } = await supabase
     .from('anios')
@@ -60,9 +49,8 @@ export async function listAniosByCarrera(carreraId: string): Promise<ServiceResu
 }
 
 export async function getAnioById(id: string): Promise<ServiceResult<Anio | null>> {
-  if (!id?.trim()) {
-    return fail('El id del año es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'año');
+  if (idErr) return fail(idErr);
 
   const { data, error } = await supabase
     .from('anios')
@@ -82,7 +70,7 @@ export async function createAnio(input: CreateAnioInput): Promise<ServiceResult<
     return fail('La carrera es obligatoria para crear el año.');
   }
 
-  const validation = validateNombre(input.nombre);
+  const validation = validateNombre(input.nombre, 'Nombre del año', 50);
   if (validation) {
     return fail(validation);
   }
@@ -109,14 +97,13 @@ export async function updateAnio(
   id: string,
   input: UpdateAnioInput
 ): Promise<ServiceResult<Anio>> {
-  if (!id?.trim()) {
-    return fail('El id del año es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'año');
+  if (idErr) return fail(idErr);
 
   const updates: UpdateAnioInput = {};
 
   if (input.nombre !== undefined) {
-    const validation = validateNombre(input.nombre);
+    const validation = validateNombre(input.nombre, 'Nombre del año', 50);
     if (validation) {
       return fail(validation);
     }
@@ -142,9 +129,8 @@ export async function updateAnio(
 }
 
 export async function deleteAnio(id: string): Promise<ServiceResult<{ id: string }>> {
-  if (!id?.trim()) {
-    return fail('El id del año es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'año');
+  if (idErr) return fail(idErr);
 
   const { error } = await supabase.from('anios').delete().eq('id', id);
   if (error) {

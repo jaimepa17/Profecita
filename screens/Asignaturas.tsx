@@ -7,8 +7,6 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
-import { ListLoaderSkeleton } from '@/components/ListLoaderSkeleton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import {
   Asignatura,
@@ -22,6 +20,7 @@ import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlig
 import { useRealtimeCollection } from '@/lib/realtime';
 import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { BrainSticker } from '@/components/BrainSticker';
+import { getCached, setCache } from '@/lib/services/dataPrefetchService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Asignaturas'>;
 type RouteProps = RouteProp<RootStackParamList, 'Asignaturas'>;
@@ -46,64 +45,32 @@ export default function AsignaturasScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { carrera, anio } = route.params;
-  const [asignaturas, setAsignaturas] = useState<Asignatura[]>([]);
-  const [statsByAsignatura, setStatsByAsignatura] = useState<Record<string, AsignaturaStats>>({});
+  const cacheKey = `asignaturas:${anio.id}`;
+  const cacheStatsKey = `asignaturas_stats:${anio.id}`;
+  const [asignaturas, setAsignaturas] = useState<Asignatura[]>(
+    () => getCached<Asignatura[]>(cacheKey) ?? [],
+  );
+  const [statsByAsignatura, setStatsByAsignatura] = useState<Record<string, AsignaturaStats>>(
+    () => getCached<Record<string, AsignaturaStats>>(cacheStatsKey) ?? {},
+  );
   const [statsLoadingByAsignatura, setStatsLoadingByAsignatura] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Asignatura | null>(null);
   const { run: runCreate, isRunning: creating } = useSingleFlight();
   const { run: runDelete, isRunning: isDeleting } = useKeyedSingleFlight<string>();
 
   const cargarAsignaturas = useCallback(async () => {
-    // Solo mostrar loader si es la carga inicial
-    if (!initialLoaded) {
-      setLoading(true);
-    }
-
     const result = await listAsignaturasByAnio(anio.id);
 
     if (!result.ok) {
       Alert.alert('No se pudieron cargar las asignaturas', result.error);
       setAsignaturas([]);
-      setLoading(false);
-      setInitialLoaded(true);
       return;
     }
 
     setAsignaturas(result.data);
-    await AsyncStorage.setItem(`asignaturas_${anio.id}_cache`, JSON.stringify(result.data));
-    setLoading(false);
-    setInitialLoaded(true);
-  }, [anio.id, initialLoaded]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const bootstrap = async () => {
-      // Cargar desde cache primero
-      try {
-        const cached = await AsyncStorage.getItem(`asignaturas_${anio.id}_cache`);
-        if (cached && mounted) {
-          setAsignaturas(JSON.parse(cached));
-          setInitialLoaded(true);
-          setLoading(false);
-        }
-      } catch (e) {
-        // Ignorar errores de cache
-      }
-
-      // Luego cargar desde API (background update)
-      await cargarAsignaturas();
-    };
-
-    void bootstrap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cargarAsignaturas]);
+    setCache(cacheKey, result.data);
+  }, [anio.id, cacheKey]);
 
   const crearNuevaAsignatura = async (nombre: string) => {
     await runCreate(async () => {
@@ -320,7 +287,7 @@ export default function AsignaturasScreen() {
 
       <View className="relative flex-1">
         <View className="absolute inset-x-0 bottom-[-4px] h-[5px] rounded-full bg-black/90" />
-        <View className="flex-1 overflow-hidden rounded-[34px] border-[4px] border-black bg-[#F7F0E4]">
+        <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden px-0.5 pb-0.5">
           <PaperGrid />
 
           <View className="px-5 pt-4">
@@ -336,25 +303,21 @@ export default function AsignaturasScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             renderItem={renderItem}
             ListEmptyComponent={
-              loading ? (
-                <ListLoaderSkeleton />
-              ) : (
-                <View className="mt-8 items-center px-3">
-                  <BrainSticker size={64} />
-                  <CustomText className="mt-3 text-center text-xl font-black text-black">
-                    Aún no hay asignaturas creadas
-                  </CustomText>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    activeOpacity={0.9}
-                    disabled={creating}
-                    onPress={() => setCreateVisible(true)}
-                    className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
-                  >
-                    <CustomText className="text-base font-black text-black">+ Crear primera asignatura</CustomText>
-                  </TouchableOpacity>
-                </View>
-              )
+              <View className="mt-8 items-center px-3">
+                <BrainSticker size={64} />
+                <CustomText className="mt-3 text-center text-xl font-black text-black">
+                  Aún no hay asignaturas creadas
+                </CustomText>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.9}
+                  disabled={creating}
+                  onPress={() => setCreateVisible(true)}
+                  className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
+                >
+                  <CustomText className="text-base font-black text-black">+ Crear primera asignatura</CustomText>
+                </TouchableOpacity>
+              </View>
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{

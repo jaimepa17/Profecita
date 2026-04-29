@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { ServiceResult, fail, ok } from './_result';
+import { validateNombre, normalizeString } from './validation';
 
 export type Grupo = {
   id: string;
@@ -19,25 +20,6 @@ export type UpdateGrupoInput = {
   nombre?: string;
   turno?: string | null;
 };
-
-function validateNombre(nombre?: string): string | null {
-  const clean = nombre?.trim();
-  if (!clean) {
-    return 'El nombre del grupo es obligatorio.';
-  }
-  if (clean.length > 50) {
-    return 'El nombre del grupo no puede superar 50 caracteres.';
-  }
-  return null;
-}
-
-function normalizeTurno(turno?: string | null): string | null {
-  const clean = turno?.trim();
-  if (!clean) {
-    return null;
-  }
-  return clean.slice(0, 50);
-}
 
 export async function listGrupos(): Promise<ServiceResult<Grupo[]>> {
   const { data, error } = await supabase
@@ -95,7 +77,7 @@ export async function createGrupo(input: CreateGrupoInput): Promise<ServiceResul
     return fail('La asignatura es obligatoria para crear el grupo.');
   }
 
-  const validation = validateNombre(input.nombre);
+  const validation = validateNombre(input.nombre, 'Nombre del grupo', 50);
   if (validation) {
     return fail(validation);
   }
@@ -103,7 +85,7 @@ export async function createGrupo(input: CreateGrupoInput): Promise<ServiceResul
   const payload = {
     asignatura_id: input.asignatura_id,
     nombre: input.nombre.trim(),
-    turno: normalizeTurno(input.turno),
+    turno: normalizeString(input.turno, 50),
   };
 
   const { data, error } = await supabase
@@ -130,7 +112,7 @@ export async function updateGrupo(
   const updates: UpdateGrupoInput = {};
 
   if (input.nombre !== undefined) {
-    const validation = validateNombre(input.nombre);
+    const validation = validateNombre(input.nombre, 'Nombre del grupo', 50);
     if (validation) {
       return fail(validation);
     }
@@ -138,7 +120,7 @@ export async function updateGrupo(
   }
 
   if (input.turno !== undefined) {
-    updates.turno = normalizeTurno(input.turno);
+    updates.turno = normalizeString(input.turno, 50);
   }
 
   if (Object.keys(updates).length === 0) {

@@ -7,8 +7,6 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '@/types/navigation';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import NameFormModal from '@/components/NameFormModal';
-import { ListLoaderSkeleton } from '@/components/ListLoaderSkeleton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Carrera } from '@/lib/services/carrerasService';
 import { Anio, createAnio, deleteAnio, listAniosByCarrera } from '@/lib/services/aniosService';
 import { getAniosStatsByIds, type AnioStats } from '@/lib/services/statsService';
@@ -16,6 +14,7 @@ import { useKeyedSingleFlight, useSingleFlight } from '@/lib/hooks/useSingleFlig
 import { useRealtimeCollection } from '@/lib/realtime';
 import { InlineSkeleton } from '@/components/InlineSkeleton';
 import { BooksSticker } from '@/components/BooksSticker';
+import { getCached, getPrefetchKeyAnios, getPrefetchKeyAniosStats } from '@/lib/services/dataPrefetchService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Anios'>;
 type RouteProps = RouteProp<RootStackParamList, 'Anios'>;
@@ -40,64 +39,29 @@ export default function AniosScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { carrera } = route.params;
-  const [anios, setAnios] = useState<Anio[]>([]);
-  const [statsByAnio, setStatsByAnio] = useState<Record<string, AnioStats>>({});
+  const [anios, setAnios] = useState<Anio[]>(
+    () => getCached<Anio[]>(getPrefetchKeyAnios(carrera.id)) ?? [],
+  );
+  const [statsByAnio, setStatsByAnio] = useState<Record<string, AnioStats>>(
+    () => getCached<Record<string, AnioStats>>(getPrefetchKeyAniosStats(carrera.id)) ?? {},
+  );
   const [statsLoadingByAnio, setStatsLoadingByAnio] = useState<Record<string, boolean>>({});
-  const [loading, setLoading] = useState(true);
-  const [initialLoaded, setInitialLoaded] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Anio | null>(null);
   const { run: runCreate, isRunning: creating } = useSingleFlight();
   const { run: runDelete, isRunning: isDeleting } = useKeyedSingleFlight<string>();
 
   const cargarAnios = useCallback(async () => {
-    // Solo mostrar loader si es la carga inicial
-    if (!initialLoaded) {
-      setLoading(true);
-    }
-
     const result = await listAniosByCarrera(carrera.id);
 
     if (!result.ok) {
       Alert.alert('No se pudieron cargar los años', result.error);
       setAnios([]);
-      setLoading(false);
-      setInitialLoaded(true);
       return;
     }
 
     setAnios(result.data);
-    await AsyncStorage.setItem(`anios_${carrera.id}_cache`, JSON.stringify(result.data));
-    setLoading(false);
-    setInitialLoaded(true);
-  }, [carrera.id, initialLoaded]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const bootstrap = async () => {
-      // Cargar desde cache primero
-      try {
-        const cached = await AsyncStorage.getItem(`anios_${carrera.id}_cache`);
-        if (cached && mounted) {
-          setAnios(JSON.parse(cached));
-          setInitialLoaded(true);
-          setLoading(false);
-        }
-      } catch (e) {
-        // Ignorar errores de cache
-      }
-
-      // Luego cargar desde API (background update)
-      await cargarAnios();
-    };
-
-    void bootstrap();
-
-    return () => {
-      mounted = false;
-    };
-  }, [cargarAnios]);
+  }, [carrera.id]);
 
   const crearNuevoAnio = async (nombre: string) => {
     await runCreate(async () => {
@@ -314,7 +278,7 @@ export default function AniosScreen() {
 
       <View className="relative flex-1">
         <View className="absolute inset-x-0 bottom-[-4px] h-[5px] rounded-full bg-black/90" />
-        <View className="flex-1 overflow-hidden rounded-[34px] border-[4px] border-black bg-[#F7F0E4]">
+        <View className="flex-1 rounded-[34px] border-[4px] border-black bg-[#F7F0E4] overflow-hidden px-0.5 pb-0.5">
           <PaperGrid />
 
           <View className="px-5 pt-4">
@@ -328,25 +292,21 @@ export default function AniosScreen() {
             keyExtractor={(item, index) => String(item.id ?? index)}
             renderItem={renderItem}
             ListEmptyComponent={
-              loading ? (
-                <ListLoaderSkeleton />
-              ) : (
-                <View className="mt-8 items-center px-3">
-                  <BooksSticker size={64} />
-                  <CustomText className="mt-3 text-center text-xl font-black text-black">
-                    Aún no hay años creados
-                  </CustomText>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    activeOpacity={0.9}
-                    disabled={creating}
-                    onPress={() => setCreateVisible(true)}
-                    className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
-                  >
-                    <CustomText className="text-base font-black text-black">+ Crear primer año</CustomText>
-                  </TouchableOpacity>
-                </View>
-              )
+              <View className="mt-8 items-center px-3">
+                <BooksSticker size={64} />
+                <CustomText className="mt-3 text-center text-xl font-black text-black">
+                  Aún no hay años creados
+                </CustomText>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.9}
+                  disabled={creating}
+                  onPress={() => setCreateVisible(true)}
+                  className="mt-5 rounded-2xl border-[3px] border-black bg-[#FFD98E] px-5 py-3"
+                >
+                  <CustomText className="text-base font-black text-black">+ Crear primer año</CustomText>
+                </TouchableOpacity>
+              </View>
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{

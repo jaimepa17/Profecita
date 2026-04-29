@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { ServiceResult, fail, ok } from './_result';
+import { validateNombre, validateRequiredId } from './validation';
 
 export type Asignatura = {
   id: string;
@@ -17,17 +18,6 @@ export type UpdateAsignaturaInput = {
   nombre?: string;
 };
 
-function validateNombre(nombre?: string): string | null {
-  const clean = nombre?.trim();
-  if (!clean) {
-    return 'El nombre de la asignatura es obligatorio.';
-  }
-  if (clean.length > 100) {
-    return 'El nombre de la asignatura no puede superar 100 caracteres.';
-  }
-  return null;
-}
-
 export async function listAsignaturas(): Promise<ServiceResult<Asignatura[]>> {
   const { data, error } = await supabase
     .from('asignaturas')
@@ -44,9 +34,8 @@ export async function listAsignaturas(): Promise<ServiceResult<Asignatura[]>> {
 export async function listAsignaturasByAnio(
   anioId: string
 ): Promise<ServiceResult<Asignatura[]>> {
-  if (!anioId?.trim()) {
-    return fail('El id del año es obligatorio.');
-  }
+  const idErr = validateRequiredId(anioId, 'año');
+  if (idErr) return fail(idErr);
 
   const { data, error } = await supabase
     .from('asignaturas')
@@ -64,9 +53,8 @@ export async function listAsignaturasByAnio(
 export async function getAsignaturaById(
   id: string
 ): Promise<ServiceResult<Asignatura | null>> {
-  if (!id?.trim()) {
-    return fail('El id de la asignatura es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'asignatura');
+  if (idErr) return fail(idErr);
 
   const { data, error } = await supabase
     .from('asignaturas')
@@ -88,7 +76,7 @@ export async function createAsignatura(
     return fail('El año es obligatorio para crear la asignatura.');
   }
 
-  const validation = validateNombre(input.nombre);
+  const validation = validateNombre(input.nombre, 'Nombre de la asignatura', 100);
   if (validation) {
     return fail(validation);
   }
@@ -115,14 +103,13 @@ export async function updateAsignatura(
   id: string,
   input: UpdateAsignaturaInput
 ): Promise<ServiceResult<Asignatura>> {
-  if (!id?.trim()) {
-    return fail('El id de la asignatura es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'asignatura');
+  if (idErr) return fail(idErr);
 
   const updates: UpdateAsignaturaInput = {};
 
   if (input.nombre !== undefined) {
-    const validation = validateNombre(input.nombre);
+    const validation = validateNombre(input.nombre, 'Nombre de la asignatura', 100);
     if (validation) {
       return fail(validation);
     }
@@ -150,9 +137,8 @@ export async function updateAsignatura(
 export async function deleteAsignatura(
   id: string
 ): Promise<ServiceResult<{ id: string }>> {
-  if (!id?.trim()) {
-    return fail('El id de la asignatura es obligatorio.');
-  }
+  const idErr = validateRequiredId(id, 'asignatura');
+  if (idErr) return fail(idErr);
 
   const { error } = await supabase.from('asignaturas').delete().eq('id', id);
   if (error) {
